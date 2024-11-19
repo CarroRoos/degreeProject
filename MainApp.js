@@ -1,41 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   TextInput,
-  Alert,
+  TouchableOpacity,
 } from "react-native";
-import * as Location from "expo-location";
-import { useDispatch } from "react-redux";
-import { setOrigin } from "./slices/navSlice";
+import { useSelector } from "react-redux";
+import SalonList from "./SalonList";
 
 function MainApp() {
-  const dispatch = useDispatch();
+  const salons = useSelector((state) => state.salons.list);
   const [currentSection, setCurrentSection] = useState("treatments");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Åtkomst nekad",
-          "Appen behöver platsåtkomst för att fungera."
-        );
-        return;
-      }
-
-      let loc = await Location.getCurrentPositionAsync({});
-      dispatch(
-        setOrigin({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        })
-      );
-    })();
-  }, [dispatch]);
+  // Filtrera salonger baserat på sökfråga
+  const filteredSalons =
+    currentSection === "treatments" && searchQuery
+      ? salons.filter((salon) =>
+          salon.treatment.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : [];
 
   return (
     <View style={styles.container}>
@@ -89,9 +74,17 @@ function MainApp() {
                 : "Vem letar du efter?"
             }
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => setSearchQuery(text)}
           />
         </View>
+      </View>
+
+      {/* Content Section */}
+      <View style={{ flex: 1 }}>
+        {currentSection === "treatments" && <SalonList data={filteredSalons} />}
+        {currentSection === "users" && (
+          <Text style={{ padding: 20 }}>Användarlistan kommer här...</Text>
+        )}
       </View>
 
       {/* Footer */}

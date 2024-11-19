@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "treatment": "Klipp & fön",
+    "time": "16.00",
+    "distance": "750 m",
+    "price": "900 kr",
+    "stylist": "Freddie",
+    "salon": "Björn Axén",
+    "ratings": 4.3,
+    "image": "freddie"
+  },
+  {
+    "id": 2,
+    "treatment": "Klipp & färgning",
+    "time": "14.30",
+    "distance": "300 m",
+    "price": "1200 kr",
+    "stylist": "Samira",
+    "salon": "Björn Axén",
+    "ratings": 5.0,
+    "image": "samira"
+  },
+  {
+    "id": 3,
+    "treatment": "Klipp",
+    "time": "16.00",
+    "distance": "750 m",
+    "price": "700 kr",
+    "stylist": "Jennifer",
+    "salon": "Björn Axén",
+    "ratings": 4.8,
+    "image": "jennifer"
+  }
+]
