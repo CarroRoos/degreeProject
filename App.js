@@ -1,12 +1,12 @@
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
-import MainApp from "./MainApp";
+import AppNavigator from "./AppNavigator";
 
 export default function App() {
   return (
     <Provider store={store}>
-      <MainApp />
+      <AppNavigator />
     </Provider>
   );
 }

@@ -6,21 +6,25 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { useSelector } from "react-redux";
-import SalonList from "./SalonList";
+import { useDispatch, useSelector } from "react-redux";
+import { filterSalons, resetFilter } from "../slices/salonSlice";
+import SalonList from "../SalonList";
+import Footer from "../components/Footer";
 
-function MainApp() {
-  const salons = useSelector((state) => state.salons.list);
+function Home({ navigation }) {
+  const dispatch = useDispatch();
+  const filteredSalons = useSelector((state) => state.salons.filteredList);
   const [currentSection, setCurrentSection] = useState("treatments");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filtrera salonger baserat på sökfråga
-  const filteredSalons =
-    currentSection === "treatments" && searchQuery
-      ? salons.filter((salon) =>
-          salon.treatment.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : [];
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      dispatch(filterSalons(query));
+    } else {
+      dispatch(resetFilter());
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -60,7 +64,7 @@ function MainApp() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Section */}
+      {/* Söksektion */}
       <View style={styles.searchSection}>
         <Text style={styles.searchText}>
           {currentSection === "treatments" ? "Sök behandling" : "Sök användare"}
@@ -74,31 +78,28 @@ function MainApp() {
                 : "Vem letar du efter?"
             }
             value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
+            onChangeText={handleSearch}
           />
         </View>
       </View>
 
-      {/* Content Section */}
+      {/* Innehåll */}
       <View style={{ flex: 1 }}>
-        {currentSection === "treatments" && <SalonList data={filteredSalons} />}
+        {searchQuery.trim() && currentSection === "treatments" && (
+          <SalonList data={filteredSalons} navigation={navigation} />
+        )}
         {currentSection === "users" && (
           <Text style={{ padding: 20 }}>Användarlistan kommer här...</Text>
         )}
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
-        <Text>Hem</Text>
-        <Text>Favoriter</Text>
-        <Text>Bokningar</Text>
-        <Text>Profil</Text>
-      </View>
+      <Footer />
     </View>
   );
 }
 
-export default MainApp;
+export default Home;
 
 const styles = StyleSheet.create({
   container: {
@@ -163,17 +164,5 @@ const styles = StyleSheet.create({
   input: {
     color: "#000",
     fontSize: 16,
-  },
-  footer: {
-    position: "absolute",
-    bottom: 40,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 10,
-    backgroundColor: "#f4f4f4",
-    borderTopWidth: 1,
-    borderColor: "#ddd",
   },
 });
