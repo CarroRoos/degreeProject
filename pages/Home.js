@@ -7,20 +7,26 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { filterSalons, resetFilter } from "../slices/salonSlice";
+import { filterSalons, filterUsers, resetFilter } from "../slices/salonSlice";
 import SalonList from "../SalonList";
+import UserList from "../UserList";
 import Footer from "../components/Footer";
 
 function Home({ navigation }) {
   const dispatch = useDispatch();
-  const filteredSalons = useSelector((state) => state.salons.filteredList);
+  const { filteredList, filteredUsers } = useSelector((state) => state.salons);
+
   const [currentSection, setCurrentSection] = useState("treatments");
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim()) {
-      dispatch(filterSalons(query));
+      if (currentSection === "treatments") {
+        dispatch(filterSalons(query));
+      } else if (currentSection === "users") {
+        dispatch(filterUsers(query));
+      }
     } else {
       dispatch(resetFilter());
     }
@@ -66,9 +72,6 @@ function Home({ navigation }) {
 
       {/* Söksektion */}
       <View style={styles.searchSection}>
-        <Text style={styles.searchText}>
-          {currentSection === "treatments" ? "Sök behandling" : "Sök användare"}
-        </Text>
         <View style={styles.searchInput}>
           <TextInput
             style={styles.input}
@@ -85,11 +88,21 @@ function Home({ navigation }) {
 
       {/* Innehåll */}
       <View style={{ flex: 1 }}>
-        {searchQuery.trim() && currentSection === "treatments" && (
-          <SalonList data={filteredSalons} navigation={navigation} />
+        {/* Visa ett hjärta när inget sökord finns */}
+        {!searchQuery.trim() && (
+          <Text style={{ textAlign: "center", fontSize: 24, marginTop: 50 }}>
+            💜
+          </Text>
         )}
-        {currentSection === "users" && (
-          <Text style={{ padding: 20 }}>Användarlistan kommer här...</Text>
+
+        {/* Visa frisörer när "Behandlingar" är valt och sökfrågan inte är tom */}
+        {currentSection === "treatments" && searchQuery.trim() && (
+          <SalonList data={filteredList} navigation={navigation} />
+        )}
+
+        {/* Visa användare när "Användare" är valt och sökfrågan inte är tom */}
+        {currentSection === "users" && searchQuery.trim() && (
+          <UserList data={filteredUsers} navigation={navigation} />
         )}
       </View>
 
@@ -116,9 +129,6 @@ const styles = StyleSheet.create({
   headerTab: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 0,
-    backgroundColor: "#9E38EE",
-    marginBottom: -10,
   },
   activeTab: {
     borderTopRightRadius: 25,
@@ -155,14 +165,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   input: {
     color: "#000",
-    fontSize: 16,
+    fontSize: 18,
   },
 });

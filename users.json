@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Alice Svensson",
+    "username": "alice_s",
+    "location": "Stockholm",
+    "category": ["hår"],
+    "description": "Endast hårinspiration",
+    "image": "https://via.placeholder.com/150"
+  },
+  {
+    "id": 2,
+    "name": "Johan Karlsson",
+    "username": "bob_k",
+    "location": "Göteborg",
+    "category": ["naglar", "hår"],
+    "description": "Naglar och hår",
+    "image": "https://via.placeholder.com/150"
+  },
+  {
+    "id": 3,
+    "name": "Clara Berg",
+    "username": "clara_b",
+    "location": "Malmö",
+    "category": ["all"],
+    "description": "Naglar, hår och massage",
+    "image": "https://via.placeholder.com/150"
+  }
+]

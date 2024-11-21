@@ -4,11 +4,13 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 
-function Footer() {
+function Footer({ disableHighlight = true }) {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const favoritesCount = useSelector((state) => state.salons.favorites.length);
+  const favoritesCount = useSelector(
+    (state) => state.salons?.favorites?.length || 0
+  );
 
   return (
     <View style={styles.footer}>
@@ -18,9 +20,9 @@ function Footer() {
         style={styles.footerItem}
       >
         <Icon
-          name="home-outline"
+          name="magnify"
           size={35}
-          color={route.name === "Home" ? "#9E38EE" : "#000"}
+          color={disableHighlight && route.name === "Home" ? "#9E38EE" : "#000"}
         />
       </TouchableOpacity>
 
@@ -32,14 +34,15 @@ function Footer() {
         <Icon
           name="heart-outline"
           size={35}
-          color={route.name === "Favorites" ? "#9E38EE" : "#000"}
+          color={
+            disableHighlight && route.name === "Favorites" ? "#9E38EE" : "#000"
+          }
         />
         {favoritesCount > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{favoritesCount}</Text>
+            <Text style={styles.badgeText}>{String(favoritesCount)}</Text>
           </View>
         )}
-        {route.name === "Favorites" && <View style={styles.indicator} />}
       </TouchableOpacity>
 
       {/* Bokningar */}
@@ -50,9 +53,10 @@ function Footer() {
         <Icon
           name="calendar-outline"
           size={35}
-          color={route.name === "Bookings" ? "#9E38EE" : "#000"}
+          color={
+            disableHighlight && route.name === "Bookings" ? "#9E38EE" : "#000"
+          }
         />
-        {route.name === "Bookings" && <View style={styles.indicator} />}
       </TouchableOpacity>
 
       {/* Profil */}
@@ -62,14 +66,17 @@ function Footer() {
       >
         <Image
           source={{
-            uri: "https://your-image-url-here.com/profile.jpg",
+            uri:
+              "https://your-image-url-here.com/profile.jpg" ||
+              "https://via.placeholder.com/35",
           }}
           style={[
             styles.profileImage,
-            route.name === "Profile" && styles.activeProfileImage,
+            disableHighlight &&
+              route.name === "Profile" &&
+              styles.activeProfileImage,
           ]}
         />
-        {route.name === "Profile" && <View style={styles.indicator} />}
       </TouchableOpacity>
     </View>
   );
@@ -121,13 +128,6 @@ const styles = StyleSheet.create({
   },
   activeProfileImage: {
     borderColor: "#9E38EE",
-  },
-  indicator: {
-    width: 5,
-    height: 5,
-    backgroundColor: "#9E38EE",
-    borderRadius: 2.5,
-    marginTop: 5,
   },
 });
 

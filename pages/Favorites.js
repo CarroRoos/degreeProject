@@ -1,5 +1,5 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   View,
   StyleSheet,
@@ -9,8 +9,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Footer from "../components/Footer";
+import { removeFavorite } from "../slices/salonSlice";
 
 function Favorites() {
+  const dispatch = useDispatch();
   const favorites = useSelector((state) => state.salons.favorites || []);
 
   const renderFavoriteCard = ({ item }) => (
@@ -25,6 +27,13 @@ function Favorites() {
         </Text>
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Se lediga tider</Text>
+        </TouchableOpacity>
+        {/* Ta bort-knapp */}
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => dispatch(removeFavorite(item.id))}
+        >
+          <Text style={styles.removeButtonText}>Ta bort</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -130,15 +139,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+  removeButton: {
+    marginTop: 10,
+    backgroundColor: "#CA95FF",
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  removeButtonText: {
+    color: "#000",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   emptyText: {
     textAlign: "center",
     fontSize: 18,
     color: "#999",
-  },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
 });

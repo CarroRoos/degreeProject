@@ -1,5 +1,5 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   View,
   StyleSheet,
@@ -9,22 +9,38 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Footer from "../components/Footer";
+import { removeBooking } from "../slices/bookingsSlice";
 
 function Bookings() {
+  const dispatch = useDispatch();
+
   const bookings = useSelector((state) => state.bookings || []);
 
   const renderBookingCard = ({ item }) => (
     <View style={styles.card}>
       {/* Bild */}
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <Image
+        source={{ uri: item.image || "https://via.placeholder.com/300x150" }}
+        style={styles.image}
+      />
       <View style={styles.cardContent}>
         {/* Information */}
-        <Text style={styles.name}>{item.treatment}</Text>
+        <Text style={styles.name}>{item.treatment || "Okänd behandling"}</Text>
         <Text style={styles.info}>
-          ⭐ {item.ratings} • {item.reviews} recensioner • {item.distance}
+          ⭐ {item.ratings || "0"} • {item.reviews || "0"} recensioner •{" "}
+          {item.distance || "okänd plats"}
         </Text>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Kontakta {item.stylist}</Text>
+          <Text style={styles.buttonText}>
+            Kontakta {item.stylist || "okänd stylist"}
+          </Text>
+        </TouchableOpacity>
+        {/* Ta bort-knapp */}
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => dispatch(removeBooking(item.id))}
+        >
+          <Text style={styles.removeButtonText}>Ta bort</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -36,7 +52,9 @@ function Bookings() {
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Bokningar ({bookings.length})</Text>
+          <Text style={styles.headerTitle}>
+            Bokningar ({Array.isArray(bookings) ? bookings.length : 0})
+          </Text>
         </View>
       </View>
 
@@ -44,7 +62,9 @@ function Bookings() {
       {bookings.length > 0 ? (
         <FlatList
           data={bookings}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) =>
+            item.id?.toString() || Math.random().toString()
+          }
           renderItem={renderBookingCard}
           contentContainerStyle={styles.listContent}
         />
@@ -75,6 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#9E38EE",
     paddingBottom: 20,
     alignItems: "center",
+    marginBottom: 20,
   },
   headerTitle: {
     color: "#fff",
@@ -127,6 +148,18 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  removeButton: {
+    marginTop: 10,
+    backgroundColor: "#CA95FF",
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  removeButtonText: {
+    color: "#000",
     fontWeight: "bold",
     fontSize: 16,
   },

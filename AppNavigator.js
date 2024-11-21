@@ -6,48 +6,28 @@ import Favorites from "./pages/Favorites";
 import Bookings from "./pages/Bookings";
 import Profile from "./pages/Profile";
 import StylistProfile from "./pages/StylistProfile";
+import BookingConfirmation from "./pages/BookingConfirmation";
+import UserProfile from "./pages/UserProfile";
 
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Favorites" component={Favorites} />
+        <Stack.Screen name="Bookings" component={Bookings} />
+        <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="StylistProfile" component={StylistProfile} />
         <Stack.Screen
-          name="Home"
-          component={Home}
-          options={{
-            header: () => null,
-          }}
+          name="BookingConfirmation"
+          component={BookingConfirmation}
         />
-        <Stack.Screen
-          name="Favorites"
-          component={Favorites}
-          options={{
-            header: () => null,
-          }}
-        />
-        <Stack.Screen
-          name="Bookings"
-          component={Bookings}
-          options={{
-            header: () => null,
-          }}
-        />
-        <Stack.Screen
-          name="Profile"
-          component={Profile}
-          options={{
-            header: () => null,
-          }}
-        />
-        <Stack.Screen
-          name="StylistProfile"
-          component={StylistProfile}
-          options={{
-            header: () => null,
-          }}
-        />
+        <Stack.Screen name="UserProfile" component={UserProfile} />
       </Stack.Navigator>
     </NavigationContainer>
   );

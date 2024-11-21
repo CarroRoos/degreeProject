@@ -9,9 +9,24 @@ import {
   ScrollView,
 } from "react-native";
 import Footer from "../components/Footer";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { useDispatch, useSelector } from "react-redux";
+import { addFavorite, removeFavorite } from "../slices/salonSlice";
 
-function StylistProfile({ route }) {
+function StylistProfile({ route, navigation }) {
   const { stylist } = route.params;
+
+  const dispatch = useDispatch();
+  const favorites = useSelector((state) => state.salons.favorites || []);
+  const isFavorite = favorites.some((fav) => fav.id === stylist.id);
+
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      dispatch(removeFavorite(stylist.id));
+    } else {
+      dispatch(addFavorite(stylist));
+    }
+  };
 
   const gallery = [
     "https://via.placeholder.com/150",
@@ -31,6 +46,14 @@ function StylistProfile({ route }) {
     "https://via.placeholder.com/150",
   ];
 
+  const handleBooking = () => {
+    navigation.navigate("BookingConfirmation", {
+      stylistName: stylist.name,
+      bookingTime: "14:30",
+      bookingDate: "11 september",
+    });
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -44,41 +67,49 @@ function StylistProfile({ route }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <Image source={{ uri: stylist.image }} style={styles.headerImage} />
           <Text style={styles.stylistInfo}>
             {stylist.title} hos {stylist.salon} ⭐ {stylist.ratings} -{" "}
             {stylist.reviews} recensioner
           </Text>
         </View>
-
         {/* Boka sektion */}
         <View style={styles.bookingSection}>
-          <Text style={styles.bookingDate}>Idag</Text>
-          <Text style={styles.bookingTime}>14:30</Text>
-          <Text style={styles.bookingPrice}>1200 kr</Text>
-          <TouchableOpacity style={styles.bookingButton}>
+          <View style={styles.bookingInfo}>
+            <Text style={styles.bookingDate}>Idag</Text>
+            <Text style={styles.bookingTime}>14:30</Text>
+            <Text style={styles.bookingPrice}>1200 kr</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.bookingButton}
+            onPress={handleBooking}
+          >
             <Text style={styles.bookingButtonText}>Boka</Text>
           </TouchableOpacity>
         </View>
 
         {/* Frisörinfo */}
         <View style={styles.stylistDetails}>
-          <Text style={styles.stylistName}>{stylist.name} - Frisör</Text>
+          <View style={styles.stylistHeader}>
+            {/* Hjärtikonen */}
+            <View style={styles.favoriteContainer}>
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={toggleFavorite}
+              >
+                <MaterialCommunityIcons
+                  name={isFavorite ? "heart" : "heart-outline"}
+                  size={40}
+                  color={isFavorite ? "#9E38EE" : "#777"}
+                />
+              </TouchableOpacity>
+              <Text style={styles.roleText}>- Frisör</Text>
+            </View>
+            <Text style={styles.stylistName}>{stylist.name}</Text>
+          </View>
           <Text style={styles.stylistDescription}>
             15 års erfarenhet{"\n"}Innehar gesällbrev, mästarbrev{"\n"}
             Utbildning i Hairtalk{"\n"}Salong: {stylist.salon}
           </Text>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Favorit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Boka</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Salong</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Galleri */}
@@ -109,16 +140,22 @@ function StylistProfile({ route }) {
         {/* Fler tider */}
         <Text style={styles.sectionTitle}>Fler tider</Text>
         <View style={styles.timeSection}>
-          <Text>17:00</Text>
-          <Text>1200 kr</Text>
-          <TouchableOpacity style={styles.bookingButton}>
+          <Text style={styles.timeText}>17:00</Text>
+          <Text style={styles.timePrice}>1200 kr</Text>
+          <TouchableOpacity
+            style={styles.bookingButton}
+            onPress={handleBooking}
+          >
             <Text style={styles.bookingButtonText}>Boka</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.timeSection}>
-          <Text>18:30</Text>
-          <Text>1200 kr</Text>
-          <TouchableOpacity style={styles.bookingButton}>
+          <Text style={styles.timeText}>18:30</Text>
+          <Text style={styles.timePrice}>1200 kr</Text>
+          <TouchableOpacity
+            style={styles.bookingButton}
+            onPress={handleBooking}
+          >
             <Text style={styles.bookingButtonText}>Boka</Text>
           </TouchableOpacity>
         </View>
@@ -133,8 +170,8 @@ function StylistProfile({ route }) {
         {/* Hemservice */}
         <Text style={styles.sectionTitle}>Behandling hemma hos dig</Text>
         <View style={styles.timeSection}>
-          <Text>20:00</Text>
-          <Text>2500 kr</Text>
+          <Text style={styles.timeText}>20:00</Text>
+          <Text style={styles.timePrice}>2500 kr</Text>
           <TouchableOpacity style={styles.requestButton}>
             <Text style={styles.requestButtonText}>Förfrågan</Text>
           </TouchableOpacity>
@@ -158,22 +195,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   placeholderImage: {
     width: "100%",
     height: 300,
+    resizeMode: "cover",
     marginBottom: 10,
   },
-
-  headerImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 10,
+  header: {
+    alignItems: "center",
+    marginBottom: 20,
+    position: "relative",
   },
   stylistInfo: {
-    color: "#000",
+    color: "#333",
     textAlign: "center",
-    marginTop: -120,
+    fontSize: 16,
+    fontWeight: "600",
   },
   bookingSection: {
     padding: 20,
@@ -182,55 +222,92 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderRadius: 10,
-    margin: 15,
-    marginTop: 20,
+    marginHorizontal: 15,
+    marginTop: -5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  bookingDate: { fontSize: 18, color: "#fff" },
-  bookingTime: { fontSize: 18, color: "#fff" },
-  bookingPrice: { fontSize: 18, color: "#fff" },
+  bookingInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  bookingDate: {
+    fontSize: 18,
+    color: "#fff",
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+  bookingTime: {
+    fontSize: 16,
+    color: "#fff",
+    marginRight: 10,
+  },
+  bookingPrice: {
+    fontSize: 16,
+    color: "#fff",
+    marginRight: 10,
+  },
   bookingButton: {
     backgroundColor: "#C190FF",
-    padding: 10,
+    paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
   },
-  bookingButtonText: { color: "#000" },
+  bookingButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
   stylistDetails: {
     padding: 20,
-    marginVertical: 10,
+    marginHorizontal: 15,
+    marginTop: 10,
+    backgroundColor: "#f3e6ff",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  stylistHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  favoriteButton: {
+    alignItems: "center",
+    marginRight: 10,
+  },
+  roleText: {
+    fontSize: 24,
+    color: "#555",
+    marginTop: 10,
+    textAlign: "center",
   },
   stylistName: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 5,
+    color: "#000",
   },
+
   stylistDescription: {
     fontSize: 16,
     lineHeight: 22,
+    color: "#555",
     marginBottom: 10,
   },
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 15,
-  },
-  actionButton: {
-    backgroundColor: "#9E38EE",
-    padding: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     paddingHorizontal: 20,
     marginTop: 20,
     fontWeight: "bold",
+    color: "#000",
   },
   galleryImage: {
     width: 100,
@@ -241,7 +318,8 @@ const styles = StyleSheet.create({
   customerButton: {
     backgroundColor: "#9E38EE",
     padding: 10,
-    margin: 20,
+    marginHorizontal: 20,
+    marginTop: 10,
     borderRadius: 8,
   },
   customerButtonText: {
@@ -257,6 +335,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     marginTop: 10,
     borderRadius: 8,
+    alignItems: "center",
+  },
+  timeText: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "600",
+  },
+  timePrice: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "600",
   },
   requestButton: {
     backgroundColor: "#9E38EE",
@@ -268,7 +357,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-
   mapPlaceholder: {
     backgroundColor: "#ddd",
     height: 150,
@@ -284,7 +372,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 5,
   },
-
   homeServiceText: {
     fontSize: 14,
     color: "#555",
@@ -292,9 +379,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 10,
     marginBottom: 20,
-  },
-
-  scrollContent: {
-    paddingBottom: 100,
   },
 });
