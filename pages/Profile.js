@@ -125,10 +125,10 @@ function Profile({ route, navigation }) {
             style={styles.editButton}
             onPress={() => navigation.navigate("EditProfile")}
           >
-            <Text style={styles.buttonText}>Redigera</Text>
+            <Text style={styles.buttonText}>+ bilder</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.shareButton}>
-            <Text style={styles.buttonText}>Dela profil</Text>
+            <Text style={styles.buttonText}>Redigera</Text>
           </TouchableOpacity>
         </View>
 
@@ -139,20 +139,32 @@ function Profile({ route, navigation }) {
 
       <View style={styles.scissorsContainer}>
         <Image
-          source={require("../assets/icons/barber.png")}
-          style={styles.scissorIcon}
+          source={require("../assets/icons/scissors2.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("scissors2") },
+          ]}
         />
         <Image
-          source={require("../assets/icons/barber.png")}
-          style={styles.scissorIcon}
+          source={require("../assets/icons/nail-polish.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("nail-polish") },
+          ]}
         />
         <Image
-          source={require("../assets/icons/barber.png")}
-          style={styles.scissorIcon}
+          source={require("../assets/icons/spa_.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("spa_") },
+          ]}
         />
         <Image
-          source={require("../assets/icons/barber.png")}
-          style={styles.scissorIcon}
+          source={require("../assets/icons/makeup_.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("makeup_") },
+          ]}
         />
       </View>
 
@@ -173,7 +185,7 @@ function Profile({ route, navigation }) {
         )}
         contentContainerStyle={styles.galleryContainer}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>Inga bilder uppladdade än</Text>
+          <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
         }
       />
 
@@ -220,7 +232,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "60%",
+    width: "80%",
     marginTop: 10,
   },
   editButton: {
@@ -249,7 +261,7 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 12,
   },
   scissorsContainer: {
     flexDirection: "row",
@@ -260,9 +272,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   scissorIcon: {
-    width: 30,
-    height: 30,
-    tintColor: "#9E38EE",
+    marginTop: 30,
+    width: 40,
+    height: 40,
+    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
   galleryContainer: {
     paddingHorizontal: 5,

@@ -187,7 +187,7 @@ export default function EditProfile({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Redigera profil</Text>
+      <Text style={styles.title}>Lägg till bilder</Text>
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.imageGrid}>

@@ -41,8 +41,8 @@
     "@babel/preset-react": "^7.25.9",
     "@react-native-community/cli": "^15.1.2",
     "@react-native/babel-preset": "^0.76.3",
-    "metro-react-native-babel-preset": "^0.77.0",
-    "@types/react": "~18.3.12"
+    "@types/react": "~18.3.12",
+    "metro-react-native-babel-preset": "^0.77.0"
   },
   "private": true
 }
