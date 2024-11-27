@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,31 +6,103 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from "react-native";
 import Footer from "../components/Footer";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { auth, storage } from "../config/firebase";
+import { signOut } from "firebase/auth";
+import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
 
-function Profile({ route }) {
-  const user = {
-    name: "Frida Nord",
-    image: "https://via.placeholder.com/150",
-    stylist: "Samira Berg",
-    gallery: [
-      "https://via.placeholder.com/150",
-      "https://via.placeholder.com/150",
-      "https://via.placeholder.com/150",
-      "https://via.placeholder.com/150",
-      "https://via.placeholder.com/150",
-      "https://via.placeholder.com/150",
-    ],
+function Profile({ route, navigation }) {
+  const [gallery, setGallery] = useState([]);
+  const [user, setUser] = useState(null);
+
+  const loadUserImages = async (userId) => {
+    try {
+      console.log("Loading images for user:", userId);
+      const imagesRef = ref(storage, `users/${userId}/images`);
+      const imagesList = await listAll(imagesRef);
+
+      const urlPromises = imagesList.items.map(async (imageRef) => {
+        const url = await getDownloadURL(imageRef);
+        return {
+          url,
+          path: imageRef.fullPath,
+        };
+      });
+
+      const images = await Promise.all(urlPromises);
+      console.log("All loaded images:", images);
+      setGallery(images.reverse());
+    } catch (error) {
+      console.error("Error loading images:", error);
+    }
   };
 
-  const { isUserProfile, userProfile } = route.params || {};
-  const displayedUser = isUserProfile ? userProfile : user;
+  const handleDeleteImage = async (imagePath) => {
+    Alert.alert(
+      "Ta bort bild",
+      "Är du säker på att du vill ta bort denna bild?",
+      [
+        {
+          text: "Avbryt",
+          style: "cancel",
+        },
+        {
+          text: "Ta bort",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const imageRef = ref(storage, imagePath);
+              await deleteObject(imageRef);
+
+              setGallery((prevGallery) =>
+                prevGallery.filter((img) => img.path !== imagePath)
+              );
+
+              Alert.alert("Klart!", "Bilden har tagits bort");
+            } catch (error) {
+              console.error("Error deleting image:", error);
+              Alert.alert("Fel", "Kunde inte ta bort bilden");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigation.replace("Login");
+    } catch (error) {
+      Alert.alert("Fel vid utloggning", error.message);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        loadUserImages(currentUser.uid);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (auth.currentUser) {
+        loadUserImages(auth.currentUser.uid);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
@@ -38,78 +110,77 @@ function Profile({ route }) {
         </View>
       </View>
 
-      {/* Profilinformation */}
       <View style={styles.profileSection}>
         <Image
-          source={{ uri: displayedUser.image }}
+          source={{
+            uri: user?.photoURL || "https://via.placeholder.com/150",
+          }}
           style={styles.profileImage}
         />
-        <Text style={styles.profileName}>{displayedUser.name}</Text>
-        {isUserProfile ? (
-          <Text style={styles.profileCategory}>
-            Kategori: {displayedUser.category?.join(", ") || "Ej angiven"}
-          </Text>
-        ) : (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.editButton}>
-              <Text style={styles.buttonText}>Redigera</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.shareButton}>
-              <Text style={styles.buttonText}>Dela profil</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+        <Text style={styles.profileName}>
+          {user?.displayName || user?.email || "Användare"}
+        </Text>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => navigation.navigate("EditProfile")}
+          >
+            <Text style={styles.buttonText}>Redigera</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.shareButton}>
+            <Text style={styles.buttonText}>Dela profil</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Ikoner */}
-      <View style={styles.iconsRow}>
-        <TouchableOpacity>
-          <MaterialCommunityIcons
-            name="content-cut"
-            size={40}
-            color="#9E38EE"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialCommunityIcons
-            name="spa-outline"
-            size={40}
-            color="#9E38EE"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialCommunityIcons name="lipstick" size={40} color="#9E38EE" />
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logga ut</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Galleri */}
+      <View style={styles.scissorsContainer}>
+        <Image
+          source={require("../assets/icons/barber.png")}
+          style={styles.scissorIcon}
+        />
+        <Image
+          source={require("../assets/icons/barber.png")}
+          style={styles.scissorIcon}
+        />
+        <Image
+          source={require("../assets/icons/barber.png")}
+          style={styles.scissorIcon}
+        />
+        <Image
+          source={require("../assets/icons/barber.png")}
+          style={styles.scissorIcon}
+        />
+      </View>
+
       <FlatList
-        data={displayedUser.gallery}
+        data={gallery}
         numColumns={3}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <Image source={{ uri: item }} style={styles.galleryImage} />
+          <View style={styles.imageWrapper}>
+            <Image source={{ uri: item.url }} style={styles.galleryImage} />
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDeleteImage(item.path)}
+            >
+              <Text style={styles.deleteButtonText}>×</Text>
+            </TouchableOpacity>
+          </View>
         )}
         contentContainerStyle={styles.galleryContainer}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Inga bilder uppladdade än</Text>
+        }
       />
 
-      {/* Stylistinfo */}
-      {!isUserProfile && (
-        <View style={styles.stylistSection}>
-          <Text style={styles.stylistText}>Frisör: {user.stylist}</Text>
-          <TouchableOpacity style={styles.stylistButton}>
-            <Text style={styles.stylistButtonText}>Till {user.stylist}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Footer */}
-      <Footer disableHighlight={!isUserProfile} />
+      <Footer />
     </View>
   );
 }
-
-export default Profile;
 
 const styles = StyleSheet.create({
   container: {
@@ -146,11 +217,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
-  profileCategory: {
-    fontSize: 16,
-    color: "#555",
-    marginBottom: 20,
-  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -173,44 +239,68 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  iconsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 10,
-    marginTop: 40,
-    marginBottom: 0,
-    gap: 0,
-  },
-  galleryContainer: {
-    paddingHorizontal: 10,
-    marginVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  galleryImage: {
-    width: 100,
-    height: 100,
-    margin: 5,
-    borderRadius: 8,
-  },
-  stylistSection: {
-    alignItems: "center",
-    marginTop: -100,
-    paddingVertical: 10,
-  },
-  stylistText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  stylistButton: {
-    backgroundColor: "#9E38EE",
+  logoutButton: {
+    backgroundColor: "#ff4444",
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 8,
-    marginTop: -130,
+    marginTop: 20,
   },
-  stylistButtonText: {
+  logoutButtonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 16,
+  },
+  scissorsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    paddingVertical: 10,
+    width: "100%",
+    marginBottom: 10,
+  },
+  scissorIcon: {
+    width: 30,
+    height: 30,
+    tintColor: "#9E38EE",
+  },
+  galleryContainer: {
+    paddingHorizontal: 5,
+    paddingVertical: 10,
+  },
+  imageWrapper: {
+    flex: 1 / 3,
+    aspectRatio: 1,
+    padding: 2,
+    position: "relative",
+  },
+  galleryImage: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  deleteButton: {
+    position: "absolute",
+    right: 5,
+    top: 5,
+    backgroundColor: "rgba(255, 0, 0, 0.7)",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#666",
+    marginTop: 20,
   },
 });
+
+export default Profile;

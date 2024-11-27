@@ -11,6 +11,7 @@ import UserProfile from "./pages/UserProfile";
 import LoginScreen from "./pages/LoginScreen";
 import CreateAccountScreen from "./pages/CreateAccountScreen";
 import QuestionnaireScreen from "./pages/QuestionnaireScreen";
+import EditProfile from "./pages/EditProfile";
 
 const Stack = createStackNavigator();
 
@@ -34,6 +35,7 @@ export default function AppNavigator() {
         <Stack.Screen name="UserProfile" component={UserProfile} />
         <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
         <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfile} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,6 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import salons from "../salonger.json";
-import users from "../users.json";
 
 const salonSlice = createSlice({
   name: "salons",
@@ -8,37 +7,13 @@ const salonSlice = createSlice({
     list: salons,
     filteredList: salons,
     favorites: [],
-    users: users,
-    filteredUsers: users,
+    users: [],
+    filteredUsers: [],
   },
   reducers: {
-    filterSalons: (state, action) => {
-      const query = action.payload.toLowerCase();
-      state.filteredList = state.list.filter((salon) => {
-        return (
-          salon.treatment.toLowerCase().includes(query) ||
-          salon.stylist.toLowerCase().includes(query) ||
-          salon.salon.toLowerCase().includes(query)
-        );
-      });
-    },
-    filterUsers: (state, action) => {
-      const query = action.payload.toLowerCase();
-      state.filteredUsers = state.users.filter((user) => {
-        return (
-          (user.name && user.name.toLowerCase().includes(query)) ||
-          (user.username && user.username.toLowerCase().includes(query)) ||
-          (user.location && user.location.toLowerCase().includes(query)) ||
-          (user.description &&
-            user.description.toLowerCase().includes(query)) ||
-          (user.category &&
-            user.category.some((cat) => cat.toLowerCase().includes(query)))
-        );
-      });
-    },
-    resetFilter: (state) => {
-      state.filteredList = state.list;
-      state.filteredUsers = state.users;
+    setUsers: (state, action) => {
+      state.users = action.payload;
+      state.filteredUsers = action.payload;
     },
     addFavorite: (state, action) => {
       const salon = action.payload;
@@ -51,14 +26,55 @@ const salonSlice = createSlice({
       state.favorites = state.favorites.filter((fav) => fav.id !== salonId);
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(filterSalons.fulfilled, (state, action) => {
+        state.filteredList = action.payload;
+      })
+      .addCase(filterUsers.fulfilled, (state, action) => {
+        state.filteredUsers = action.payload;
+      })
+      .addCase(resetFilter.fulfilled, (state) => {
+        // Fixat här
+        state.filteredList = state.list;
+        state.filteredUsers = state.users;
+      });
+  },
 });
 
-export const {
-  filterSalons,
-  filterUsers,
-  resetFilter,
-  addFavorite,
-  removeFavorite,
-} = salonSlice.actions;
+export const filterSalons = createAsyncThunk(
+  "salons/filterSalons",
+  async (query, { getState }) => {
+    const { list } = getState().salons;
+    return list.filter(
+      (salon) =>
+        salon.treatment.toLowerCase().includes(query.toLowerCase()) ||
+        salon.stylist.toLowerCase().includes(query.toLowerCase()) ||
+        salon.salon.toLowerCase().includes(query.toLowerCase())
+    );
+  }
+);
+
+export const filterUsers = createAsyncThunk(
+  "salons/filterUsers",
+  async (query, { getState }) => {
+    const { users } = getState().salons;
+    return users.filter(
+      (user) =>
+        user.displayName.toLowerCase().includes(query.toLowerCase()) ||
+        user.email.toLowerCase().includes(query.toLowerCase())
+    );
+  }
+);
+
+export const resetFilter = createAsyncThunk(
+  "salons/resetFilter",
+  async (_, { getState }) => {
+    const { list, users } = getState().salons;
+    return { salons: list, users };
+  }
+);
+
+export const { setUsers, addFavorite, removeFavorite } = salonSlice.actions;
 
 export default salonSlice.reducer;

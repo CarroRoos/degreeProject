@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { auth } from "../config/firebase";
 
 export default function QuestionnaireScreen({ navigation }) {
+  const [userName, setUserName] = useState("");
   const [selectedOptions, setSelectedOptions] = useState({
     visitLength: null,
     hairLength: null,
@@ -17,6 +19,13 @@ export default function QuestionnaireScreen({ navigation }) {
     visitFrequency: null,
     interests: [],
   });
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user?.displayName) {
+      setUserName(user.displayName);
+    }
+  }, []);
 
   const toggleOption = (category, value) => {
     if (category === "interests") {
@@ -54,13 +63,12 @@ export default function QuestionnaireScreen({ navigation }) {
       style={styles.gradientBackground}
     >
       <View style={styles.container}>
-        {}
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.title}>Hej Frida!</Text>
+          <Text style={styles.title}>Hej {userName}!</Text>
           <Text style={styles.subtitle}>
             För att visa de bästa behandlingarna för dig, svara på frågorna
             nedan.

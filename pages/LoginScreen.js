@@ -1,38 +1,64 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { auth } from "../config/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginScreen({ navigation }) {
-  const handleLogin = () => {
-    navigation.navigate("Home");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      Alert.alert(
+        "Inloggning lyckades!",
+        `Välkommen tillbaka, ${userCredential.user.email}!`
+      );
+      navigation.navigate("Home");
+    } catch (error) {
+      Alert.alert(
+        "Inloggningsfel",
+        error.message || "Kontrollera dina inloggningsuppgifter."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <LinearGradient
-      colors={["#CE1F93", "#A64EFF", "#000000"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      colors={["#FFFFFF", "#AF43F2", "#000000"]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
       style={styles.gradientBackground}
     >
       <View style={styles.container}>
-        {}
         <View>
           <Text style={styles.title}>Hej! ✄</Text>
           <Text style={styles.subtitle}>Logga in på ditt konto</Text>
         </View>
 
-        {}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.textInput}
             placeholder="E-postadress"
             keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
         <View style={styles.inputContainer}>
@@ -40,18 +66,24 @@ export default function LoginScreen({ navigation }) {
             style={styles.textInput}
             placeholder="Lösenord"
             secureTextEntry
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
-        {}
         <TouchableOpacity>
           <Text style={styles.forgotText}>Glömt mitt lösenord</Text>
         </TouchableOpacity>
 
-        {}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Logga in</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.loginButtonText}>
+              {isLoading ? "Loggar in..." : "Logga in"}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.altButton}
@@ -77,13 +109,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#000",
     marginBottom: 20,
     marginTop: 100,
   },
   subtitle: {
     fontSize: 18,
-    color: "#fff",
+    color: "#000",
     marginBottom: 30,
   },
   inputContainer: {

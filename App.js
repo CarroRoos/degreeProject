@@ -1,3 +1,4 @@
+import "react-native-reanimated";
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
@@ -9,7 +10,7 @@ export default function App() {
     <Provider store={store}>
       <>
         <AppNavigator />
-        <Toast /> {}
+        <Toast />
       </>
     </Provider>
   );
