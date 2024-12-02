@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "degreeproject-24"
+  },
+  "targets": {},
+  "etags": {
+    "degreeproject-24": {
+      "extensionInstances": {
+        "firestore-algolia-search": "6a9cb2f213b1fa564ba28b8a2b114c5948557130a61af9b1c45df9fff6ac3ad0"
+      }
+    }
+  }
+}

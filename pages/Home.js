@@ -16,6 +16,7 @@ import UserList from "../UserList";
 import Footer from "../components/Footer";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
+import algoliaSearch from "../AlgoliaSearchService";
 
 function Home({ navigation }) {
   const dispatch = useDispatch();
@@ -46,14 +47,30 @@ function Home({ navigation }) {
     fetchUsers();
   }, []);
 
-  const handleSearch = (query) => {
+  const handleSearch = async (query) => {
     setSearchQuery(query);
     if (query.trim()) {
-      dispatch(filterSalons(query));
-      dispatch(filterUsers(query));
-    } else {
-      dispatch(resetFilter());
-      dispatch(resetUsers());
+      try {
+        const response = await fetch(
+          `https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/salonger/query`,
+          {
+            method: "POST",
+            headers: {
+              "X-Algolia-API-Key": "b0fb4ded362b98421a89e30a99a8f1ef",
+              "X-Algolia-Application-Id": "UBHJYH9DZZ",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              query,
+            }),
+          }
+        );
+
+        const data = await response.json();
+        console.log("Algolia results:", data);
+      } catch (error) {
+        console.error("Algolia search error:", error);
+      }
     }
   };
 
