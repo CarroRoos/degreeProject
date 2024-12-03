@@ -9,17 +9,13 @@ const userSlice = createSlice({
   reducers: {
     setUsers: (state, action) => {
       state.users = action.payload;
+      state.filteredUsers = action.payload;
     },
     filterUsers: (state, action) => {
-      const query = action.payload.toLowerCase();
-      state.filteredUsers = state.users.filter(
-        (user) =>
-          user.displayName?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query)
-      );
+      state.filteredUsers = action.payload;
     },
     resetUsers: (state) => {
-      state.filteredUsers = [];
+      state.filteredUsers = state.users;
     },
   },
 });

@@ -1,56 +1,87 @@
 import React from "react";
 import {
+  View,
+  Text,
+  Image,
   FlatList,
   TouchableOpacity,
-  Text,
   StyleSheet,
-  View,
 } from "react-native";
 
 const UserList = ({ data, navigation }) => {
+  const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
+
+  const renderUser = ({ item }) => (
+    <TouchableOpacity
+      key={item.uid}
+      style={styles.userCard}
+      onPress={() => navigation.navigate("UserProfile", { userId: item.uid })}
+    >
+      <View style={styles.cardContent}>
+        <Image
+          source={{ uri: item.photoURL || defaultAvatar }}
+          style={styles.profileImage}
+        />
+        <View style={styles.textContent}>
+          <Text style={styles.userName}>{item.displayName}</Text>
+          <Text style={styles.location}>Malmö</Text>
+          <Text style={styles.categories}>Hår, naglar, massage, pedikyr</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <FlatList
       data={data}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("UserProfile", { userId: item.id })
-          }
-          style={styles.item}
-        >
-          <Text style={styles.name}>{item.displayName}</Text>
-          <Text style={styles.details}>{item.email}</Text>
-        </TouchableOpacity>
-      )}
+      renderItem={renderUser}
+      keyExtractor={(item) => item.uid || item.objectID}
+      style={styles.list}
     />
   );
 };
 
 const styles = StyleSheet.create({
-  item: {
+  list: {
+    width: "100%",
+    padding: 15,
+  },
+  userCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
     padding: 15,
     marginBottom: 10,
-    backgroundColor: "#fff",
-    borderRadius: 10,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    elevation: 3,
   },
-  name: {
-    fontSize: 16,
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 40,
+    marginRight: 15,
+  },
+  textContent: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#000",
+    marginBottom: 4,
   },
-  details: {
-    fontSize: 14,
+  location: {
+    fontSize: 16,
     color: "#666",
-    marginTop: 5,
+    marginBottom: 4,
+  },
+  categories: {
+    fontSize: 12,
+    color: "#888",
   },
 });
 

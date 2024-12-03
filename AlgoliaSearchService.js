@@ -3,56 +3,18 @@ import { createInMemoryCache } from "@algolia/cache-in-memory";
 import { createAPIKeyStrategy } from "@algolia/client-search";
 import { createTransporter } from "@algolia/transporter";
 
-const createSearchClient = (appId, apiKey) => {
-  const headers = {
-    "x-algolia-api-key": apiKey,
-    "x-algolia-application-id": appId,
-  };
-
-  const transporter = createTransporter({
-    headers,
-    queryParameters: {},
-    timeouts: { connect: 2, read: 5, write: 30 },
-    hosts: [{ url: `${appId}-dsn.algolia.net` }],
-  });
-
-  const cache = createNullCache();
-
-  return {
-    search: async (queries) => {
-      try {
-        const { results } = await transporter.read({
-          method: "POST",
-          path: "/1/indexes/*/queries",
-          data: {
-            requests: queries.map((q) => ({
-              ...q,
-              params: new URLSearchParams(q.params).toString(),
-            })),
-          },
-        });
-
-        return { results };
-      } catch (error) {
-        console.error("Search error:", error);
-        return { results: [], error: error.message };
-      }
-    },
-  };
-};
-
-const searchClient = createSearchClient(
-  "UBHJYH9DZZ",
-  "b0fb4ded362b98421a89e30a99a8f1ef"
-);
-
 const search = async (query) => {
   try {
-    const { results } = await searchClient.search([
-      {
-        indexName: "Salonger",
-        query,
-        params: {
+    const [salonResponse, userResponse] = await Promise.all([
+      fetch("https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/salonger/query", {
+        method: "POST",
+        headers: {
+          "X-Algolia-API-Key": "b0fb4ded362b98421a89e30a99a8f1ef",
+          "X-Algolia-Application-Id": "UBHJYH9DZZ",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query,
           attributesToRetrieve: [
             "objectID",
             "salon",
@@ -65,14 +27,48 @@ const search = async (query) => {
             "ratings",
             "image",
           ],
+        }),
+      }),
+      fetch("https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/users/query", {
+        method: "POST",
+        headers: {
+          "X-Algolia-API-Key": "b0fb4ded362b98421a89e30a99a8f1ef",
+          "X-Algolia-Application-Id": "UBHJYH9DZZ",
+          "Content-Type": "application/json",
         },
-      },
+        body: JSON.stringify({
+          query,
+          attributesToRetrieve: [
+            "objectID",
+            "displayName",
+            "email",
+            "photoURL",
+            "uid",
+          ],
+        }),
+      }),
     ]);
 
-    return { results: results[0].hits, error: null };
+    const [salonData, userData] = await Promise.all([
+      salonResponse.json(),
+      userResponse.json(),
+    ]);
+
+    console.log("Salon results:", salonData.hits);
+    console.log("User results:", userData.hits);
+
+    return {
+      salongerResults: salonData.hits || [],
+      usersResults: userData.hits || [],
+      error: null,
+    };
   } catch (error) {
-    console.error("Algolia search error:", error);
-    return { results: [], error: error.message };
+    console.error("Search error:", error);
+    return {
+      salongerResults: [],
+      usersResults: [],
+      error: error.message,
+    };
   }
 };
 

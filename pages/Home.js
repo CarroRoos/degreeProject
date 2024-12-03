@@ -51,26 +51,17 @@ function Home({ navigation }) {
     setSearchQuery(query);
     if (query.trim()) {
       try {
-        const response = await fetch(
-          `https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/salonger/query`,
-          {
-            method: "POST",
-            headers: {
-              "X-Algolia-API-Key": "b0fb4ded362b98421a89e30a99a8f1ef",
-              "X-Algolia-Application-Id": "UBHJYH9DZZ",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              query,
-            }),
-          }
+        const { salongerResults, usersResults } = await algoliaSearch.search(
+          query
         );
-
-        const data = await response.json();
-        console.log("Algolia results:", data);
+        dispatch(filterSalons(salongerResults));
+        dispatch(filterUsers(usersResults));
       } catch (error) {
-        console.error("Algolia search error:", error);
+        console.error("Search error:", error);
       }
+    } else {
+      dispatch(resetSalonFilter());
+      dispatch(resetUserFilter());
     }
   };
 
@@ -87,11 +78,19 @@ function Home({ navigation }) {
 
     return (
       <>
-        <Text style={styles.resultHeader}>Frisörer</Text>
-        <SalonList data={filteredList} navigation={navigation} />
+        {filteredList.length > 0 && (
+          <>
+            <Text style={styles.resultHeader}>Frisörer</Text>
+            <SalonList data={filteredList} navigation={navigation} />
+          </>
+        )}
 
-        <Text style={styles.resultHeader}>Användare</Text>
-        <UserList data={filteredUsers} navigation={navigation} />
+        {filteredUsers.length > 0 && (
+          <>
+            <Text style={styles.resultHeader}>Användare</Text>
+            <UserList data={filteredUsers} navigation={navigation} />
+          </>
+        )}
       </>
     );
   };
