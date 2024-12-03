@@ -13,7 +13,6 @@ const UserList = ({ data, navigation }) => {
 
   const renderUser = ({ item }) => (
     <TouchableOpacity
-      key={item.uid}
       style={styles.userCard}
       onPress={() => navigation.navigate("UserProfile", { userId: item.uid })}
     >
@@ -24,8 +23,12 @@ const UserList = ({ data, navigation }) => {
         />
         <View style={styles.textContent}>
           <Text style={styles.userName}>{item.displayName}</Text>
-          <Text style={styles.location}>Malmö</Text>
-          <Text style={styles.categories}>Hår, naglar, massage, pedikyr</Text>
+          <Text style={styles.location}>
+            {item.location || "Plats ej angiven"}
+          </Text>
+          <Text style={styles.categories}>
+            {item.categories?.join(", ") || "Kategorier ej angivna"}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>

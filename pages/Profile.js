@@ -127,7 +127,10 @@ function Profile({ route, navigation }) {
           >
             <Text style={styles.buttonText}>+ bilder</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.shareButton}>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={() => navigation.navigate("EditMyProfile")}
+          >
             <Text style={styles.buttonText}>Redigera</Text>
           </TouchableOpacity>
         </View>
