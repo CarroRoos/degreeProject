@@ -9,7 +9,11 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
-import { filterSalons, resetFilter } from "../slices/salonSlice";
+import {
+  filterSalons,
+  resetFilter,
+  setFilteredSalons,
+} from "../slices/salonSlice";
 import { setUsers, filterUsers, resetUsers } from "../slices/userSlice";
 import SalonList from "../SalonList";
 import UserList from "../UserList";
@@ -54,14 +58,14 @@ function Home({ navigation }) {
         const { salongerResults, usersResults } = await algoliaSearch.search(
           query
         );
-        dispatch(filterSalons(salongerResults));
+        dispatch(setFilteredSalons(salongerResults));
         dispatch(filterUsers(usersResults));
       } catch (error) {
         console.error("Search error:", error);
       }
     } else {
-      dispatch(resetSalonFilter());
-      dispatch(resetUserFilter());
+      dispatch(resetFilter());
+      dispatch(resetUsers());
     }
   };
 
@@ -78,14 +82,14 @@ function Home({ navigation }) {
 
     return (
       <>
-        {filteredList.length > 0 && (
+        {filteredList?.length > 0 && (
           <>
             <Text style={styles.resultHeader}>Frisörer</Text>
             <SalonList data={filteredList} navigation={navigation} />
           </>
         )}
 
-        {filteredUsers.length > 0 && (
+        {filteredUsers?.length > 0 && (
           <>
             <Text style={styles.resultHeader}>Användare</Text>
             <UserList data={filteredUsers} navigation={navigation} />

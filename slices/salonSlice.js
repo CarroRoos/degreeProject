@@ -18,6 +18,9 @@ const salonSlice = createSlice({
       state.list = action.payload;
       state.filteredList = action.payload;
     },
+    setFilteredSalons: (state, action) => {
+      state.filteredList = action.payload;
+    },
     addFavorite: (state, action) => {
       const salon = action.payload;
       if (!state.favorites.some((fav) => fav.id === salon.id)) {
@@ -49,7 +52,7 @@ export const filterSalons = createAsyncThunk(
   async (query) => {
     try {
       const response = await fetch(
-        `https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/Salonger/query`,
+        `https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/salonger/query`,
         {
           method: "POST",
           headers: {
@@ -59,6 +62,18 @@ export const filterSalons = createAsyncThunk(
           },
           body: JSON.stringify({
             query,
+            attributesToRetrieve: [
+              "objectID",
+              "salon",
+              "treatment",
+              "stylist",
+              "id",
+              "time",
+              "distance",
+              "price",
+              "ratings",
+              "image",
+            ],
           }),
         }
       );
@@ -92,7 +107,12 @@ export const resetFilter = createAsyncThunk(
   }
 );
 
-export const { setUsers, setSalons, addFavorite, removeFavorite } =
-  salonSlice.actions;
+export const {
+  setUsers,
+  setSalons,
+  setFilteredSalons,
+  addFavorite,
+  removeFavorite,
+} = salonSlice.actions;
 
 export default salonSlice.reducer;
