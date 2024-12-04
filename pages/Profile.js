@@ -9,7 +9,6 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { addUserFavorite, removeUserFavorite } from "../slices/userSlice";
 import Footer from "../components/Footer";
 import { auth, storage } from "../config/firebase";
 import { signOut } from "firebase/auth";
@@ -18,33 +17,17 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 function Profile({ route, navigation }) {
   const dispatch = useDispatch();
-  const userFavorites = useSelector((state) => state.users.userFavorites || []);
+  const favoriteCounts = useSelector(
+    (state) => state.users.favoriteCounts || {}
+  );
   const [gallery, setGallery] = useState([]);
   const [user, setUser] = useState(null);
-
-  const isFavorite = user
-    ? userFavorites.some((fav) => fav.uid === user.uid)
-    : false;
-
-  const handleFavoritePress = () => {
-    if (!user) return;
-
-    const userObject = {
-      uid: user.uid,
-      displayName: user.displayName || user.email,
-      photoURL: user.photoURL,
-    };
-
-    if (isFavorite) {
-      dispatch(removeUserFavorite(user.uid));
-    } else {
-      dispatch(addUserFavorite(userObject));
-    }
-  };
+  const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
+  const currentUserId = auth.currentUser?.uid;
+  const favoriteCount = favoriteCounts[currentUserId] || 0;
 
   const loadUserImages = async (userId) => {
     try {
-      console.log("Loading images for user:", userId);
       const imagesRef = ref(storage, `users/${userId}/images`);
       const imagesList = await listAll(imagesRef);
 
@@ -57,7 +40,6 @@ function Profile({ route, navigation }) {
       });
 
       const images = await Promise.all(urlPromises);
-      console.log("All loaded images:", images);
       setGallery(images.reverse());
     } catch (error) {
       console.error("Error loading images:", error);
@@ -136,27 +118,21 @@ function Profile({ route, navigation }) {
       </View>
 
       <View style={styles.profileSection}>
-        <View style={styles.profileHeaderRow}>
-          <Image
-            source={{
-              uri: user?.photoURL || "https://via.placeholder.com/150",
-            }}
-            style={styles.profileImage}
-          />
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={handleFavoritePress}
-          >
-            <Icon
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={24}
-              color={isFavorite ? "#9E38EE" : "#777"}
-            />
-          </TouchableOpacity>
+        <Image
+          source={{
+            uri: user?.photoURL || defaultAvatar,
+          }}
+          style={styles.profileImage}
+        />
+        <View style={styles.nameContainer}>
+          <Text style={styles.profileName}>
+            {user?.displayName || user?.email || "Användare"}
+          </Text>
+          <View style={styles.favoriteContainer}>
+            <Icon name="heart" size={24} color="#9E38EE" />
+            <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+          </View>
         </View>
-        <Text style={styles.profileName}>
-          {user?.displayName || user?.email || "Användare"}
-        </Text>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.editButton}
@@ -258,36 +234,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 20,
   },
-  profileHeaderRow: {
+  nameContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
-    position: "relative",
-    width: "100%",
-    justifyContent: "center",
+    marginVertical: 10,
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
   },
-  favoriteButton: {
-    position: "absolute",
-    right: "25%",
-    top: "50%",
-    transform: [{ translateY: -12 }],
-    padding: 10,
+  favoriteContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  favoriteCount: {
+    fontSize: 16,
+    color: "#666",
+    marginLeft: 5,
   },
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 10,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: "80%",
-    marginTop: 10,
+    marginTop: 20,
   },
   editButton: {
     backgroundColor: "#9E38EE",

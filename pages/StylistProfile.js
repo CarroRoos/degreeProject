@@ -20,6 +20,24 @@ function StylistProfile({ route, navigation }) {
   const favorites = useSelector((state) => state.salons.favorites || []);
   const isFavorite = favorites.some((fav) => fav.id === stylist.id);
 
+  const getImage = (imageName) => {
+    try {
+      switch (imageName) {
+        case "freddie":
+          return require("../assets/images/freddie.jpg");
+        case "samira":
+          return require("../assets/images/samira.jpg");
+        case "jennifer":
+          return require("../assets/images/jennifer.jpg");
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error(`Error loading image for ${imageName}:`, error);
+      return null;
+    }
+  };
+
   const toggleFavorite = () => {
     if (isFavorite) {
       dispatch(removeFavorite(stylist.id));
@@ -57,22 +75,22 @@ function StylistProfile({ route, navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Placeholder-bild */}
         <Image
-          source={{
-            uri: "https://via.placeholder.com/500x200",
-          }}
+          source={
+            getImage(stylist.image) || {
+              uri: "https://via.placeholder.com/500x200",
+            }
+          }
           style={styles.placeholderImage}
         />
 
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.stylistInfo}>
             {stylist.title} hos {stylist.salon} ⭐ {stylist.ratings} -{" "}
             {stylist.reviews} recensioner
           </Text>
         </View>
-        {/* Boka sektion */}
+
         <View style={styles.bookingSection}>
           <View style={styles.bookingInfo}>
             <Text style={styles.bookingDate}>Idag</Text>
@@ -87,10 +105,8 @@ function StylistProfile({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Frisörinfo */}
         <View style={styles.stylistDetails}>
           <View style={styles.stylistHeader}>
-            {/* Hjärtikonen */}
             <View style={styles.favoriteContainer}>
               <TouchableOpacity
                 style={styles.favoriteButton}
@@ -112,7 +128,6 @@ function StylistProfile({ route, navigation }) {
           </Text>
         </View>
 
-        {/* Galleri */}
         <Text style={styles.sectionTitle}>Utvalda hårbilder</Text>
         <FlatList
           data={gallery}
@@ -123,7 +138,6 @@ function StylistProfile({ route, navigation }) {
           )}
         />
 
-        {/* Kundsektion */}
         <Text style={styles.sectionTitle}>Kund: Frida Nord</Text>
         <FlatList
           data={customerGallery}
@@ -137,7 +151,6 @@ function StylistProfile({ route, navigation }) {
           <Text style={styles.customerButtonText}>Till Frida</Text>
         </TouchableOpacity>
 
-        {/* Fler tider */}
         <Text style={styles.sectionTitle}>Fler tider</Text>
         <View style={styles.timeSection}>
           <Text style={styles.timeText}>17:00</Text>
@@ -160,14 +173,12 @@ function StylistProfile({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Plats */}
         <Text style={styles.sectionTitle}>Plats:</Text>
         <Text style={styles.placeText}>Karlaplan 12, 300 m</Text>
         <View style={styles.mapPlaceholder}>
           <Text>Karta här</Text>
         </View>
 
-        {/* Hemservice */}
         <Text style={styles.sectionTitle}>Behandling hemma hos dig</Text>
         <View style={styles.timeSection}>
           <Text style={styles.timeText}>20:00</Text>
@@ -182,13 +193,10 @@ function StylistProfile({ route, navigation }) {
           Priset gäller klipp, färg och styling.
         </Text>
       </ScrollView>
-      {/* Footer */}
       <Footer />
     </View>
   );
 }
-
-export default StylistProfile;
 
 const styles = StyleSheet.create({
   container: {
@@ -200,9 +208,11 @@ const styles = StyleSheet.create({
   },
   placeholderImage: {
     width: "100%",
-    height: 300,
-    resizeMode: "cover",
-    marginBottom: 10,
+    height: 200,
+    resizeMode: "contain",
+    marginBottom: 20,
+    marginTop: 80,
+    backgroundColor: "#fff",
   },
   header: {
     alignItems: "center",
@@ -261,7 +271,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-
   stylistDetails: {
     padding: 20,
     marginHorizontal: 15,
@@ -274,7 +283,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-
   stylistHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -295,7 +303,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
   },
-
   stylistDescription: {
     fontSize: 16,
     lineHeight: 22,
@@ -381,3 +388,5 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 });
+
+export default StylistProfile;

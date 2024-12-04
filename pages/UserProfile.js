@@ -6,14 +6,14 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { addUserFavorite, removeUserFavorite } from "../slices/userSlice";
 import Footer from "../components/Footer";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { auth, storage } from "../config/firebase";
-import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
+import { auth, storage, db } from "../config/firebase";
+import { ref, listAll, getDownloadURL } from "firebase/storage";
+import { doc, getDoc } from "firebase/firestore";
 
 function UserProfile({ route, navigation }) {
   const dispatch = useDispatch();
@@ -29,18 +29,14 @@ function UserProfile({ route, navigation }) {
   const isFavorite = userFavorites.some((fav) => fav.uid === userId);
   const favoriteCount = favoriteCounts[userId] || 0;
 
-  const handleFavoritePress = () => {
-    if (!user) return;
-
-    if (isFavorite) {
-      dispatch(removeUserFavorite(userId));
-    } else {
-      const userObject = {
-        uid: user.uid,
-        displayName: user.displayName || user.email,
-        photoURL: user.photoURL,
-      };
-      dispatch(addUserFavorite(userObject));
+  const loadUserData = async (userId) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists()) {
+        setUser({ id: userDoc.id, ...userDoc.data() });
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
     }
   };
 
@@ -48,15 +44,10 @@ function UserProfile({ route, navigation }) {
     try {
       const imagesRef = ref(storage, `users/${userId}/images`);
       const imagesList = await listAll(imagesRef);
-
       const urlPromises = imagesList.items.map(async (imageRef) => {
         const url = await getDownloadURL(imageRef);
-        return {
-          url,
-          path: imageRef.fullPath,
-        };
+        return { url, path: imageRef.fullPath };
       });
-
       const images = await Promise.all(urlPromises);
       setGallery(images.reverse());
     } catch (error) {
@@ -64,9 +55,27 @@ function UserProfile({ route, navigation }) {
     }
   };
 
+  const handleFavoritePress = () => {
+    if (!user || auth.currentUser?.uid === userId) return;
+
+    if (isFavorite) {
+      dispatch(removeUserFavorite(userId));
+    } else {
+      const userObject = {
+        uid: user.id,
+        displayName: user.displayName || user.email,
+        photoURL: user.photoURL,
+        location: user.location,
+      };
+      dispatch(addUserFavorite(userObject));
+    }
+  };
+
   useEffect(() => {
-    setUser();
-    loadUserImages(userId);
+    if (userId) {
+      loadUserData(userId);
+      loadUserImages(userId);
+    }
   }, [userId]);
 
   return (
@@ -80,9 +89,7 @@ function UserProfile({ route, navigation }) {
 
       <View style={styles.profileSection}>
         <Image
-          source={{
-            uri: user?.photoURL || defaultAvatar,
-          }}
+          source={{ uri: user?.photoURL || defaultAvatar }}
           style={styles.profileImage}
         />
         <View style={styles.nameContainer}>
@@ -90,19 +97,52 @@ function UserProfile({ route, navigation }) {
             {user?.displayName || "Användare"}
           </Text>
           <View style={styles.favoriteContainer}>
-            <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={handleFavoritePress}
-            >
-              <Icon
-                name={isFavorite ? "heart" : "heart-outline"}
-                size={24}
-                color={isFavorite ? "#9E38EE" : "#777"}
-              />
-            </TouchableOpacity>
+            {auth.currentUser?.uid !== userId ? (
+              <TouchableOpacity onPress={handleFavoritePress}>
+                <Icon
+                  name={isFavorite ? "heart" : "heart-outline"}
+                  size={24}
+                  color="#9E38EE"
+                />
+              </TouchableOpacity>
+            ) : (
+              <Icon name="heart" size={24} color="#9E38EE" />
+            )}
             <Text style={styles.favoriteCount}>{favoriteCount}</Text>
           </View>
         </View>
+        {user?.location && <Text style={styles.location}>{user.location}</Text>}
+      </View>
+
+      <View style={styles.scissorsContainer}>
+        <Image
+          source={require("../assets/icons/scissors2.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("scissors2") },
+          ]}
+        />
+        <Image
+          source={require("../assets/icons/nail-polish.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("nail-polish") },
+          ]}
+        />
+        <Image
+          source={require("../assets/icons/spa_.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("spa_") },
+          ]}
+        />
+        <Image
+          source={require("../assets/icons/makeup_.png")}
+          style={[
+            styles.scissorIcon,
+            { tintColor: styles.scissorIcon.tintColor("makeup_") },
+          ]}
+        />
       </View>
 
       <FlatList
@@ -119,7 +159,6 @@ function UserProfile({ route, navigation }) {
           <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
         }
       />
-
       <Footer />
     </View>
   );
@@ -168,14 +207,31 @@ const styles = StyleSheet.create({
   favoriteContainer: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  favoriteButton: {
-    padding: 5,
+    marginLeft: 10,
   },
   favoriteCount: {
     fontSize: 16,
     color: "#666",
     marginLeft: 5,
+  },
+  location: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 5,
+  },
+  scissorsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    paddingVertical: 10,
+    width: "100%",
+    marginBottom: 10,
+  },
+  scissorIcon: {
+    marginTop: 30,
+    width: 40,
+    height: 40,
+    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
   galleryContainer: {
     paddingHorizontal: 5,
