@@ -8,14 +8,39 @@ import {
   FlatList,
   Alert,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { addUserFavorite, removeUserFavorite } from "../slices/userSlice";
 import Footer from "../components/Footer";
 import { auth, storage } from "../config/firebase";
 import { signOut } from "firebase/auth";
 import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 function Profile({ route, navigation }) {
+  const dispatch = useDispatch();
+  const userFavorites = useSelector((state) => state.users.userFavorites || []);
   const [gallery, setGallery] = useState([]);
   const [user, setUser] = useState(null);
+
+  const isFavorite = user
+    ? userFavorites.some((fav) => fav.uid === user.uid)
+    : false;
+
+  const handleFavoritePress = () => {
+    if (!user) return;
+
+    const userObject = {
+      uid: user.uid,
+      displayName: user.displayName || user.email,
+      photoURL: user.photoURL,
+    };
+
+    if (isFavorite) {
+      dispatch(removeUserFavorite(user.uid));
+    } else {
+      dispatch(addUserFavorite(userObject));
+    }
+  };
 
   const loadUserImages = async (userId) => {
     try {
@@ -111,12 +136,24 @@ function Profile({ route, navigation }) {
       </View>
 
       <View style={styles.profileSection}>
-        <Image
-          source={{
-            uri: user?.photoURL || "https://via.placeholder.com/150",
-          }}
-          style={styles.profileImage}
-        />
+        <View style={styles.profileHeaderRow}>
+          <Image
+            source={{
+              uri: user?.photoURL || "https://via.placeholder.com/150",
+            }}
+            style={styles.profileImage}
+          />
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={handleFavoritePress}
+          >
+            <Icon
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? "#9E38EE" : "#777"}
+            />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.profileName}>
           {user?.displayName || user?.email || "Användare"}
         </Text>
@@ -221,11 +258,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 20,
   },
+  profileHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    position: "relative",
+    width: "100%",
+    justifyContent: "center",
+  },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 10,
+  },
+  favoriteButton: {
+    position: "absolute",
+    right: "25%",
+    top: "50%",
+    transform: [{ translateY: -12 }],
+    padding: 10,
   },
   profileName: {
     fontSize: 20,

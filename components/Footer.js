@@ -8,9 +8,13 @@ function Footer({ disableHighlight = true }) {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const favoritesCount = useSelector(
+  const salonFavorites = useSelector(
     (state) => state.salons?.favorites?.length || 0
   );
+  const userFavorites = useSelector(
+    (state) => state.users?.userFavorites?.length || 0
+  );
+  const totalFavorites = salonFavorites + userFavorites;
 
   return (
     <View style={styles.footer}>
@@ -38,9 +42,9 @@ function Footer({ disableHighlight = true }) {
             disableHighlight && route.name === "Favorites" ? "#9E38EE" : "#000"
           }
         />
-        {favoritesCount > 0 && (
+        {totalFavorites > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{String(favoritesCount)}</Text>
+            <Text style={styles.badgeText}>{String(totalFavorites)}</Text>
           </View>
         )}
       </TouchableOpacity>

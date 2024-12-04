@@ -1,80 +1,73 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, FlatList } from "react-native";
-import { doc, getDoc } from "firebase/firestore";
-import { ref, listAll, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../config/firebase";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  Image,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { addUserFavorite, removeUserFavorite } from "../slices/userSlice";
 import Footer from "../components/Footer";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { auth, storage } from "../config/firebase";
+import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
 
-export default function UserProfile({ route, navigation }) {
+function UserProfile({ route, navigation }) {
+  const dispatch = useDispatch();
   const { userId } = route.params;
-  const [userData, setUserData] = useState(null);
+  const userFavorites = useSelector((state) => state.users.userFavorites || []);
+  const favoriteCounts = useSelector(
+    (state) => state.users.favoriteCounts || {}
+  );
   const [gallery, setGallery] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
+
+  const isFavorite = userFavorites.some((fav) => fav.uid === userId);
+  const favoriteCount = favoriteCounts[userId] || 0;
+
+  const handleFavoritePress = () => {
+    if (!user) return;
+
+    if (isFavorite) {
+      dispatch(removeUserFavorite(userId));
+    } else {
+      const userObject = {
+        uid: user.uid,
+        displayName: user.displayName || user.email,
+        photoURL: user.photoURL,
+      };
+      dispatch(addUserFavorite(userObject));
+    }
+  };
+
+  const loadUserImages = async (userId) => {
+    try {
+      const imagesRef = ref(storage, `users/${userId}/images`);
+      const imagesList = await listAll(imagesRef);
+
+      const urlPromises = imagesList.items.map(async (imageRef) => {
+        const url = await getDownloadURL(imageRef);
+        return {
+          url,
+          path: imageRef.fullPath,
+        };
+      });
+
+      const images = await Promise.all(urlPromises);
+      setGallery(images.reverse());
+    } catch (error) {
+      console.error("Error loading images:", error);
+    }
+  };
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        console.log("Försöker hämta användardata för userId:", userId);
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          console.log("Hittade användardata:", userDoc.data());
-          setUserData(userDoc.data());
-        } else {
-          console.log("Ingen användardata hittades för userId:", userId);
-          setError("Användaren hittades inte");
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        setError("Kunde inte ladda användardata");
-      }
-    };
-
-    const loadUserImages = async () => {
-      try {
-        console.log("Loading images for user:", userId);
-        const imagesRef = ref(storage, `users/${userId}/images`);
-        const imagesList = await listAll(imagesRef);
-        console.log("Found images:", imagesList.items.length);
-
-        const urlPromises = imagesList.items.map(async (imageRef) => {
-          const url = await getDownloadURL(imageRef);
-          return {
-            url,
-            path: imageRef.fullPath,
-          };
-        });
-
-        const images = await Promise.all(urlPromises);
-        console.log("All loaded images:", images);
-        setGallery(images.reverse());
-      } catch (error) {
-        console.error("Error loading images:", error);
-        setError("Kunde inte ladda bilder");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUserData();
-    loadUserImages();
+    setUser();
+    loadUserImages(userId);
   }, [userId]);
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Laddar...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -88,35 +81,28 @@ export default function UserProfile({ route, navigation }) {
       <View style={styles.profileSection}>
         <Image
           source={{
-            uri: userData?.photoURL || "https://via.placeholder.com/150",
+            uri: user?.photoURL || defaultAvatar,
           }}
           style={styles.profileImage}
-          onError={(error) =>
-            console.log("Profile image error:", error.nativeEvent.error)
-          }
         />
-        <Text style={styles.profileName}>
-          {userData?.displayName || userData?.email || "Användare"}
-        </Text>
-      </View>
-
-      <View style={styles.scissorsContainer}>
-        <Image
-          source={require("../assets/icons/scissors2.png")}
-          style={[styles.scissorIcon, { tintColor: "#9E38EE" }]}
-        />
-        <Image
-          source={require("../assets/icons/nail-polish.png")}
-          style={[styles.scissorIcon, { tintColor: "black" }]}
-        />
-        <Image
-          source={require("../assets/icons/spa_.png")}
-          style={[styles.scissorIcon, { tintColor: "black" }]}
-        />
-        <Image
-          source={require("../assets/icons/makeup_.png")}
-          style={[styles.scissorIcon, { tintColor: "black" }]}
-        />
+        <View style={styles.nameContainer}>
+          <Text style={styles.profileName}>
+            {user?.displayName || "Användare"}
+          </Text>
+          <View style={styles.favoriteContainer}>
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={handleFavoritePress}
+            >
+              <Icon
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color={isFavorite ? "#9E38EE" : "#777"}
+              />
+            </TouchableOpacity>
+            <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+          </View>
+        </View>
       </View>
 
       <FlatList
@@ -169,22 +155,27 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 10,
   },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+  },
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
+    marginRight: 10,
   },
-  scissorsContainer: {
+  favoriteContainer: {
     flexDirection: "row",
-    justifyContent: "space-evenly",
     alignItems: "center",
-    paddingVertical: 10,
-    width: "100%",
-    marginBottom: 10,
   },
-  scissorIcon: {
-    marginTop: 30,
-    width: 40,
-    height: 40,
+  favoriteButton: {
+    padding: 5,
+  },
+  favoriteCount: {
+    fontSize: 16,
+    color: "#666",
+    marginLeft: 5,
   },
   galleryContainer: {
     paddingHorizontal: 5,
@@ -206,9 +197,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 20,
   },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginTop: 20,
-  },
 });
+
+export default UserProfile;

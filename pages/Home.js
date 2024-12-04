@@ -26,6 +26,9 @@ function Home({ navigation }) {
   const dispatch = useDispatch();
   const { filteredList } = useSelector((state) => state.salons);
   const { filteredUsers } = useSelector((state) => state.users);
+  const favorites = useSelector((state) => state.salons.favorites || []);
+  const userFavorites = useSelector((state) => state.users.userFavorites || []);
+  const totalFavorites = favorites.length + userFavorites.length;
   const [searchQuery, setSearchQuery] = useState("");
   const [currentFilter, setCurrentFilter] = useState("forYou");
 
@@ -151,7 +154,7 @@ function Home({ navigation }) {
         style={styles.resultSection}
       />
 
-      <Footer />
+      <Footer favoritesCount={totalFavorites} />
     </View>
   );
 }

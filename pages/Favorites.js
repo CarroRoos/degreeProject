@@ -10,51 +10,122 @@ import {
 } from "react-native";
 import Footer from "../components/Footer";
 import { removeFavorite } from "../slices/salonSlice";
+import { removeUserFavorite } from "../slices/userSlice";
+import { useNavigation } from "@react-navigation/native";
 
 function Favorites() {
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const favorites = useSelector((state) => state.salons.favorites || []);
+  const userFavorites = useSelector((state) => state.users.userFavorites || []);
+  const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-  const renderFavoriteCard = ({ item }) => (
-    <View style={styles.card}>
-      {/* Bild */}
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <View style={styles.cardContent}>
-        {/* Information */}
-        <Text style={styles.name}>{item.treatment}</Text>
-        <Text style={styles.info}>
-          ⭐ {item.ratings} • {item.reviews} recensioner • {item.distance}
-        </Text>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Se lediga tider</Text>
+  const getImage = (imageName) => {
+    try {
+      switch (imageName) {
+        case "freddie":
+          return require("../assets/images/freddie.jpg");
+        case "samira":
+          return require("../assets/images/samira.jpg");
+        case "jennifer":
+          return require("../assets/images/jennifer.jpg");
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error(`Error loading image for ${imageName}:`, error);
+      return null;
+    }
+  };
+
+  const handleCardPress = (item) => {
+    if (item.ratings) {
+      navigation.navigate("StylistProfile", { stylist: item });
+    } else {
+      navigation.navigate("UserProfile", { userId: item.uid });
+    }
+  };
+
+  const renderFavoriteCard = ({ item }) => {
+    const isSalon = Boolean(item.ratings);
+
+    return (
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.userCardContent}
+          onPress={() => handleCardPress(item)}
+        >
+          <Image
+            source={
+              isSalon
+                ? getImage(item.image) || { uri: defaultAvatar }
+                : { uri: item.photoURL || defaultAvatar }
+            }
+            style={styles.profileImage}
+          />
+          <View style={styles.textContent}>
+            <Text style={styles.name}>
+              {isSalon ? item.stylist : item.displayName}
+            </Text>
+            <Text style={styles.info}>
+              {isSalon
+                ? `${item.treatment} • ${item.distance}`
+                : item.location || "Plats ej angiven"}
+            </Text>
+          </View>
         </TouchableOpacity>
-        {/* Ta bort-knapp */}
         <TouchableOpacity
           style={styles.removeButton}
-          onPress={() => dispatch(removeFavorite(item.id))}
+          onPress={() => {
+            if (isSalon) {
+              dispatch(removeFavorite(item.id));
+            } else {
+              dispatch(removeUserFavorite(item.uid));
+            }
+          }}
         >
           <Text style={styles.removeButtonText}>Ta bort</Text>
         </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header med två lila sektioner */}
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Favoriter ({favorites.length})</Text>
+          <Text style={styles.headerTitle}>
+            Favoriter ({favorites.length + userFavorites.length})
+          </Text>
         </View>
       </View>
 
-      {/* Lista */}
-      {favorites.length > 0 ? (
+      {favorites.length > 0 || userFavorites.length > 0 ? (
         <FlatList
-          data={favorites}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderFavoriteCard}
+          data={[
+            { type: "header", id: "salonHeader", title: "Frisörer" },
+            ...favorites,
+            { type: "header", id: "userHeader", title: "Användare" },
+            ...userFavorites,
+          ]}
+          keyExtractor={(item) => {
+            if (item.type === "header") return item.id;
+            return item.ratings ? `salon-${item.id}` : `user-${item.uid}`;
+          }}
+          renderItem={({ item }) => {
+            if (item.type === "header") {
+              const shouldShow =
+                item.id === "salonHeader"
+                  ? favorites.length > 0
+                  : userFavorites.length > 0;
+
+              return shouldShow ? (
+                <Text style={styles.sectionHeader}>{item.title}</Text>
+              ) : null;
+            }
+            return renderFavoriteCard({ item });
+          }}
           contentContainerStyle={styles.listContent}
         />
       ) : (
@@ -63,13 +134,10 @@ function Favorites() {
         </View>
       )}
 
-      {/* Footer */}
-      <Footer favoritesCount={favorites.length} />
+      <Footer favoritesCount={favorites.length + userFavorites.length} />
     </View>
   );
 }
-
-export default Favorites;
 
 const styles = StyleSheet.create({
   container: {
@@ -91,6 +159,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 20,
   },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    padding: 15,
+    backgroundColor: "#f8f8f8",
+    color: "#333",
+  },
   listContent: {
     paddingHorizontal: 15,
     paddingBottom: 100,
@@ -104,6 +179,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 15,
     marginBottom: 20,
+    marginTop: 10,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -111,12 +187,19 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  image: {
-    width: "100%",
-    height: 150,
-  },
-  cardContent: {
+  userCardContent: {
+    flexDirection: "row",
     padding: 15,
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  textContent: {
+    flex: 1,
   },
   name: {
     fontSize: 18,
@@ -128,19 +211,9 @@ const styles = StyleSheet.create({
     color: "#555",
     marginBottom: 10,
   },
-  button: {
-    backgroundColor: "#9E38EE",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
   removeButton: {
-    marginTop: 10,
+    marginHorizontal: 15,
+    marginBottom: 15,
     backgroundColor: "#CA95FF",
     paddingVertical: 6,
     borderRadius: 8,
@@ -157,3 +230,5 @@ const styles = StyleSheet.create({
     color: "#999",
   },
 });
+
+export default Favorites;

@@ -7,38 +7,75 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { addUserFavorite, removeUserFavorite } from "./slices/userSlice";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const UserList = ({ data, navigation }) => {
+  const dispatch = useDispatch();
+  const userFavorites = useSelector((state) => state.users.userFavorites || []);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
-  const renderUser = ({ item }) => (
-    <TouchableOpacity
-      style={styles.userCard}
-      onPress={() => navigation.navigate("UserProfile", { userId: item.uid })}
-    >
-      <View style={styles.cardContent}>
-        <Image
-          source={{ uri: item.photoURL || defaultAvatar }}
-          style={styles.profileImage}
-        />
-        <View style={styles.textContent}>
-          <Text style={styles.userName}>{item.displayName}</Text>
-          <Text style={styles.location}>
-            {item.location || "Plats ej angiven"}
-          </Text>
-          <Text style={styles.categories}>
-            {item.categories?.join(", ") || "Kategorier ej angivna"}
-          </Text>
-        </View>
+  const handleFavoritePress = (user) => {
+    if (userFavorites.some((fav) => fav.uid === user.uid)) {
+      dispatch(removeUserFavorite(user.uid));
+    } else {
+      dispatch(addUserFavorite(user));
+    }
+  };
+
+  const renderUser = ({ item }) => {
+    const isFavorite = userFavorites.some((fav) => fav.uid === item.uid);
+
+    return (
+      <View style={styles.userCard}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("UserProfile", { userId: item.uid })
+          }
+        >
+          <View style={styles.cardContent}>
+            <Image
+              source={{ uri: item.photoURL || defaultAvatar }}
+              style={styles.profileImage}
+            />
+            <View style={styles.textContent}>
+              <Text style={styles.userName}>{item.displayName}</Text>
+              <Text style={styles.location}>
+                {item.location || "Plats ej angiven"}
+              </Text>
+              <Text style={styles.categories}>
+                {item.categories?.join(", ") || "Kategorier ej angivna"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={() => handleFavoritePress(item)}
+            >
+              <Icon
+                name={isFavorite ? "favorite" : "favorite-border"}
+                size={24}
+                color={isFavorite ? "#9E38EE" : "#666"}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
+
+  const getKey = (item) => {
+    if (item.uid) return `user-${item.uid}`;
+    if (item.id) return `user-${item.id}`;
+    if (item.objectID) return `user-${item.objectID}`;
+    return `user-${Math.random()}`;
+  };
 
   return (
     <FlatList
       data={data}
       renderItem={renderUser}
-      keyExtractor={(item) => item.uid || item.objectID}
+      keyExtractor={getKey}
       style={styles.list}
     />
   );
@@ -85,6 +122,9 @@ const styles = StyleSheet.create({
   categories: {
     fontSize: 12,
     color: "#888",
+  },
+  favoriteButton: {
+    padding: 8,
   },
 });
 
