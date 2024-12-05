@@ -18,7 +18,11 @@ function StylistProfile({ route, navigation }) {
 
   const dispatch = useDispatch();
   const favorites = useSelector((state) => state.salons.favorites || []);
+  const favoriteCounts = useSelector(
+    (state) => state.salons.favoriteCounts || {}
+  );
   const isFavorite = favorites.some((fav) => fav.id === stylist.id);
+  const favoriteCount = favoriteCounts[stylist.id] || 0;
 
   const getImage = (imageName) => {
     try {
@@ -86,8 +90,7 @@ function StylistProfile({ route, navigation }) {
 
         <View style={styles.header}>
           <Text style={styles.stylistInfo}>
-            {stylist.title} hos {stylist.salon} ⭐ {stylist.ratings} -{" "}
-            {stylist.reviews} recensioner
+            hos {stylist.salon} ⭐ {stylist.ratings} - recensioner
           </Text>
         </View>
 
@@ -108,19 +111,21 @@ function StylistProfile({ route, navigation }) {
         <View style={styles.stylistDetails}>
           <View style={styles.stylistHeader}>
             <View style={styles.favoriteContainer}>
+              <Text style={styles.roleText}>Frisör</Text>
               <TouchableOpacity
-                style={styles.favoriteButton}
+                style={styles.heartButton}
                 onPress={toggleFavorite}
               >
-                <MaterialCommunityIcons
-                  name={isFavorite ? "heart" : "heart-outline"}
-                  size={40}
-                  color={isFavorite ? "#9E38EE" : "#777"}
-                />
+                <View style={styles.heartContainer}>
+                  <MaterialCommunityIcons
+                    name={isFavorite ? "heart" : "heart-outline"}
+                    size={40}
+                    color={isFavorite ? "#9E38EE" : "#777"}
+                  />
+                  <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+                </View>
               </TouchableOpacity>
-              <Text style={styles.roleText}>- Frisör</Text>
             </View>
-            <Text style={styles.stylistName}>{stylist.name}</Text>
           </View>
           <Text style={styles.stylistDescription}>
             15 års erfarenhet{"\n"}Innehar gesällbrev, mästarbrev{"\n"}
@@ -210,8 +215,8 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     resizeMode: "contain",
-    marginBottom: 20,
-    marginTop: 80,
+    marginBottom: 40,
+    marginTop: 90,
     backgroundColor: "#fff",
   },
   header: {
@@ -288,20 +293,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  favoriteButton: {
+  favoriteContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    marginRight: 10,
   },
   roleText: {
     fontSize: 24,
     color: "#555",
-    marginTop: 10,
-    textAlign: "center",
+    marginRight: 10,
   },
-  stylistName: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#000",
+  heartButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  heartContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  favoriteCount: {
+    fontSize: 16,
+    color: "#666",
+    marginLeft: 5,
   },
   stylistDescription: {
     fontSize: 16,
@@ -355,7 +367,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   requestButton: {
-    backgroundColor: "#9E38EE",
+    backgroundColor: "#C190FF",
     padding: 10,
     borderRadius: 8,
   },

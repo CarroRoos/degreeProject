@@ -4,11 +4,13 @@ import { Provider } from "react-redux";
 import { store } from "./store";
 import AppNavigator from "./AppNavigator";
 import Toast from "react-native-toast-message";
-import { loadFavoriteData } from "./slices/userSlice";
+import { loadGlobalUserFavoriteCounts } from "./slices/userSlice";
+import { loadGlobalFavoriteCounts } from "./slices/salonSlice";
 
 export default function App() {
   useEffect(() => {
-    store.dispatch(loadFavoriteData());
+    store.dispatch(loadGlobalUserFavoriteCounts());
+    store.dispatch(loadGlobalFavoriteCounts());
   }, []);
 
   return (

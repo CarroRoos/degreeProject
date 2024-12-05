@@ -1,16 +1,42 @@
-import { createSlice } from "@reduxjs/toolkit";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { db } from "../config/firebase";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 
-const initialState = {
-  users: [],
-  filteredUsers: [],
-  userFavorites: [],
-  favoriteCounts: {},
+export const loadGlobalUserFavoriteCounts = createAsyncThunk(
+  "users/loadGlobalFavoriteCounts",
+  async () => {
+    const countsDoc = await getDoc(doc(db, "globalCounts", "userFavorites"));
+    if (countsDoc.exists()) {
+      return countsDoc.data();
+    }
+    return {};
+  }
+);
+
+const updateFirebaseFavoriteCount = async (userId, isAdding) => {
+  const countsRef = doc(db, "globalCounts", "userFavorites");
+  const countsDoc = await getDoc(countsRef);
+
+  const currentCount = countsDoc.exists() ? countsDoc.data()[userId] || 0 : 0;
+  const newCount = isAdding ? currentCount + 1 : Math.max(currentCount - 1, 0);
+
+  if (!countsDoc.exists()) {
+    await setDoc(countsRef, { [userId]: newCount });
+  } else {
+    await updateDoc(countsRef, { [userId]: newCount });
+  }
+
+  return newCount;
 };
 
 const userSlice = createSlice({
   name: "users",
-  initialState,
+  initialState: {
+    users: [],
+    filteredUsers: [],
+    userFavorites: [],
+    favoriteCounts: {},
+  },
   reducers: {
     setUsers: (state, action) => {
       state.users = action.payload;
@@ -22,23 +48,15 @@ const userSlice = createSlice({
     resetUsers: (state) => {
       state.filteredUsers = state.users;
     },
-    setUserFavorites: (state, action) => {
-      state.userFavorites = action.payload;
-    },
     addUserFavorite: (state, action) => {
       const user = action.payload;
       if (!state.userFavorites.some((fav) => fav.uid === user.uid)) {
         state.userFavorites.push(user);
+
         state.favoriteCounts[user.uid] =
           (state.favoriteCounts[user.uid] || 0) + 1;
-        AsyncStorage.setItem(
-          "userFavorites",
-          JSON.stringify(state.userFavorites)
-        );
-        AsyncStorage.setItem(
-          "favoriteCounts",
-          JSON.stringify(state.favoriteCounts)
-        );
+
+        updateFirebaseFavoriteCount(user.uid, true);
       }
     },
     removeUserFavorite: (state, action) => {
@@ -48,39 +66,20 @@ const userSlice = createSlice({
       );
       if (state.favoriteCounts[userId] > 0) {
         state.favoriteCounts[userId]--;
+
+        updateFirebaseFavoriteCount(userId, false);
       }
-      AsyncStorage.setItem(
-        "userFavorites",
-        JSON.stringify(state.userFavorites)
-      );
-      AsyncStorage.setItem(
-        "favoriteCounts",
-        JSON.stringify(state.favoriteCounts)
-      );
     },
     setFavoriteCounts: (state, action) => {
       state.favoriteCounts = action.payload;
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(loadGlobalUserFavoriteCounts.fulfilled, (state, action) => {
+      state.favoriteCounts = action.payload;
+    });
+  },
 });
-
-export const loadFavoriteData = () => async (dispatch) => {
-  try {
-    const [favoritesData, countsData] = await Promise.all([
-      AsyncStorage.getItem("userFavorites"),
-      AsyncStorage.getItem("favoriteCounts"),
-    ]);
-
-    if (favoritesData) {
-      dispatch(setUserFavorites(JSON.parse(favoritesData)));
-    }
-    if (countsData) {
-      dispatch(setFavoriteCounts(JSON.parse(countsData)));
-    }
-  } catch (error) {
-    console.error("Error loading favorite data:", error);
-  }
-};
 
 export const {
   setUsers,
@@ -88,7 +87,6 @@ export const {
   resetUsers,
   addUserFavorite,
   removeUserFavorite,
-  setUserFavorites,
   setFavoriteCounts,
 } = userSlice.actions;
 

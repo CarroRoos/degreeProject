@@ -28,6 +28,7 @@ function UserProfile({ route, navigation }) {
 
   const isFavorite = userFavorites.some((fav) => fav.uid === userId);
   const favoriteCount = favoriteCounts[userId] || 0;
+  const isOwnProfile = auth.currentUser?.uid === userId;
 
   const loadUserData = async (userId) => {
     try {
@@ -56,7 +57,7 @@ function UserProfile({ route, navigation }) {
   };
 
   const handleFavoritePress = () => {
-    if (!user || auth.currentUser?.uid === userId) return;
+    if (!user || isOwnProfile) return;
 
     if (isFavorite) {
       dispatch(removeUserFavorite(userId));
@@ -97,18 +98,24 @@ function UserProfile({ route, navigation }) {
             {user?.displayName || "Användare"}
           </Text>
           <View style={styles.favoriteContainer}>
-            {auth.currentUser?.uid !== userId ? (
-              <TouchableOpacity onPress={handleFavoritePress}>
+            {isOwnProfile ? (
+              <View style={styles.heartContainer}>
+                <Icon name="heart" size={24} color="#9E38EE" />
+                <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.heartContainer}
+                onPress={handleFavoritePress}
+              >
                 <Icon
                   name={isFavorite ? "heart" : "heart-outline"}
                   size={24}
                   color="#9E38EE"
                 />
+                <Text style={styles.favoriteCount}>{favoriteCount}</Text>
               </TouchableOpacity>
-            ) : (
-              <Icon name="heart" size={24} color="#9E38EE" />
             )}
-            <Text style={styles.favoriteCount}>{favoriteCount}</Text>
           </View>
         </View>
         {user?.location && <Text style={styles.location}>{user.location}</Text>}
@@ -195,19 +202,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   nameContainer: {
-    flexDirection: "row",
     alignItems: "center",
     marginVertical: 10,
   },
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
-    marginRight: 10,
+    marginBottom: 5,
   },
   favoriteContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 10,
+  },
+  roleText: {
+    fontSize: 24,
+    color: "#555",
+    marginRight: 10,
+  },
+  heartContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   favoriteCount: {
     fontSize: 16,
@@ -218,20 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     marginTop: 5,
-  },
-  scissorsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-    paddingVertical: 10,
-    width: "100%",
-    marginBottom: 10,
-  },
-  scissorIcon: {
-    marginTop: 30,
-    width: 40,
-    height: 40,
-    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
   galleryContainer: {
     paddingHorizontal: 5,
@@ -252,6 +252,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#666",
     marginTop: 20,
+  },
+  scissorsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    paddingVertical: 10,
+    width: "100%",
+    marginBottom: 10,
+  },
+  scissorIcon: {
+    marginTop: 30,
+    width: 40,
+    height: 40,
+    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
 });
 

@@ -1,4 +1,33 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { db } from "../config/firebase";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+
+export const loadGlobalFavoriteCounts = createAsyncThunk(
+  "salons/loadGlobalFavoriteCounts",
+  async () => {
+    const countsDoc = await getDoc(doc(db, "globalCounts", "favorites"));
+    if (countsDoc.exists()) {
+      return countsDoc.data();
+    }
+    return {};
+  }
+);
+
+const updateFirebaseFavoriteCount = async (salonId, isAdding) => {
+  const countsRef = doc(db, "globalCounts", "favorites");
+  const countsDoc = await getDoc(countsRef);
+
+  const currentCount = countsDoc.exists() ? countsDoc.data()[salonId] || 0 : 0;
+  const newCount = isAdding ? currentCount + 1 : Math.max(currentCount - 1, 0);
+
+  if (!countsDoc.exists()) {
+    await setDoc(countsRef, { [salonId]: newCount });
+  } else {
+    await updateDoc(countsRef, { [salonId]: newCount });
+  }
+
+  return newCount;
+};
 
 const salonSlice = createSlice({
   name: "salons",
@@ -6,14 +35,9 @@ const salonSlice = createSlice({
     list: [],
     filteredList: [],
     favorites: [],
-    users: [],
-    filteredUsers: [],
+    favoriteCounts: {},
   },
   reducers: {
-    setUsers: (state, action) => {
-      state.users = action.payload;
-      state.filteredUsers = action.payload;
-    },
     setSalons: (state, action) => {
       state.list = action.payload;
       state.filteredList = action.payload;
@@ -21,98 +45,48 @@ const salonSlice = createSlice({
     setFilteredSalons: (state, action) => {
       state.filteredList = action.payload;
     },
+    setFavoriteCounts: (state, action) => {
+      state.favoriteCounts = action.payload;
+    },
     addFavorite: (state, action) => {
       const salon = action.payload;
       if (!state.favorites.some((fav) => fav.id === salon.id)) {
         state.favorites.push(salon);
+
+        state.favoriteCounts[salon.id] =
+          (state.favoriteCounts[salon.id] || 0) + 1;
+
+        updateFirebaseFavoriteCount(salon.id, true).then((newCount) => {
+          state.favoriteCounts[salon.id] = newCount;
+        });
       }
     },
     removeFavorite: (state, action) => {
       const salonId = action.payload;
       state.favorites = state.favorites.filter((fav) => fav.id !== salonId);
+
+      if (state.favoriteCounts[salonId] > 0) {
+        state.favoriteCounts[salonId] = state.favoriteCounts[salonId] - 1;
+
+        updateFirebaseFavoriteCount(salonId, false).then((newCount) => {
+          state.favoriteCounts[salonId] = newCount;
+        });
+      }
     },
   },
   extraReducers: (builder) => {
-    builder
-      .addCase(filterSalons.fulfilled, (state, action) => {
-        state.filteredList = action.payload;
-      })
-      .addCase(filterUsers.fulfilled, (state, action) => {
-        state.filteredUsers = action.payload;
-      })
-      .addCase(resetFilter.fulfilled, (state) => {
-        state.filteredList = state.list;
-        state.filteredUsers = state.users;
-      });
+    builder.addCase(loadGlobalFavoriteCounts.fulfilled, (state, action) => {
+      state.favoriteCounts = action.payload;
+    });
   },
 });
 
-export const filterSalons = createAsyncThunk(
-  "salons/filterSalons",
-  async (query) => {
-    try {
-      const response = await fetch(
-        `https://UBHJYH9DZZ-dsn.algolia.net/1/indexes/salonger/query`,
-        {
-          method: "POST",
-          headers: {
-            "X-Algolia-API-Key": "b0fb4ded362b98421a89e30a99a8f1ef",
-            "X-Algolia-Application-Id": "UBHJYH9DZZ",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query,
-            attributesToRetrieve: [
-              "objectID",
-              "salon",
-              "treatment",
-              "stylist",
-              "id",
-              "time",
-              "distance",
-              "price",
-              "ratings",
-              "image",
-            ],
-          }),
-        }
-      );
-
-      const data = await response.json();
-      return data.hits || [];
-    } catch (error) {
-      console.error("Search error:", error);
-      return [];
-    }
-  }
-);
-
-export const filterUsers = createAsyncThunk(
-  "salons/filterUsers",
-  async (query, { getState }) => {
-    const { users } = getState().salons;
-    return users.filter(
-      (user) =>
-        user.displayName.toLowerCase().includes(query.toLowerCase()) ||
-        user.email.toLowerCase().includes(query.toLowerCase())
-    );
-  }
-);
-
-export const resetFilter = createAsyncThunk(
-  "salons/resetFilter",
-  async (_, { getState }) => {
-    const { list, users } = getState().salons;
-    return { salons: list, users };
-  }
-);
-
 export const {
-  setUsers,
   setSalons,
   setFilteredSalons,
   addFavorite,
   removeFavorite,
+  setFavoriteCounts,
 } = salonSlice.actions;
 
 export default salonSlice.reducer;
