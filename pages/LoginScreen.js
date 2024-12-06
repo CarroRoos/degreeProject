@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { setCurrentUser } from "../slices/userSlice";
 import {
   View,
   Text,
@@ -12,6 +14,7 @@ import { auth } from "../config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginScreen({ navigation }) {
+  const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +27,9 @@ export default function LoginScreen({ navigation }) {
         email,
         password
       );
+
+      dispatch(setCurrentUser(userCredential.user.uid));
+
       Alert.alert(
         "Inloggning lyckades!",
         `Välkommen tillbaka, ${userCredential.user.email}!`

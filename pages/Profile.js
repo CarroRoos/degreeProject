@@ -14,6 +14,7 @@ import { auth, storage } from "../config/firebase";
 import { signOut } from "firebase/auth";
 import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { setCurrentUser, clearUserFavorites } from "../slices/userSlice";
 
 function Profile({ route, navigation }) {
   const dispatch = useDispatch();
@@ -81,6 +82,9 @@ function Profile({ route, navigation }) {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+
+      dispatch(setCurrentUser(null));
+      dispatch(clearUserFavorites());
       navigation.replace("Login");
     } catch (error) {
       Alert.alert("Fel vid utloggning", error.message);
@@ -108,80 +112,84 @@ function Profile({ route, navigation }) {
     return unsubscribe;
   }, [navigation]);
 
+  const renderProfileSection = () => (
+    <View style={styles.profileSection}>
+      <Image
+        source={{
+          uri: user?.photoURL || defaultAvatar,
+        }}
+        style={styles.profileImage}
+      />
+      <View style={styles.nameContainer}>
+        <Text style={styles.profileName}>
+          {user?.displayName || user?.email || "Användare"}
+        </Text>
+        <View style={styles.favoriteContainer}>
+          <Icon name="heart" size={24} color="#9E38EE" />
+          <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+        </View>
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate("EditProfile")}
+        >
+          <Text style={styles.buttonText}>+ bilder</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={() => navigation.navigate("EditMyProfile")}
+        >
+          <Text style={styles.buttonText}>Redigera</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logga ut</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderScissorsContainer = () => (
+    <View style={styles.scissorsContainer}>
+      <Image
+        source={require("../assets/icons/scissors2.png")}
+        style={[
+          styles.scissorIcon,
+          { tintColor: styles.scissorIcon.tintColor("scissors2") },
+        ]}
+      />
+      <Image
+        source={require("../assets/icons/nail-polish.png")}
+        style={[
+          styles.scissorIcon,
+          { tintColor: styles.scissorIcon.tintColor("nail-polish") },
+        ]}
+      />
+      <Image
+        source={require("../assets/icons/spa_.png")}
+        style={[
+          styles.scissorIcon,
+          { tintColor: styles.scissorIcon.tintColor("spa_") },
+        ]}
+      />
+      <Image
+        source={require("../assets/icons/makeup_.png")}
+        style={[
+          styles.scissorIcon,
+          { tintColor: styles.scissorIcon.tintColor("makeup_") },
+        ]}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <View>
+      <View style={styles.headerContainer}>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profil</Text>
         </View>
-      </View>
-
-      <View style={styles.profileSection}>
-        <Image
-          source={{
-            uri: user?.photoURL || defaultAvatar,
-          }}
-          style={styles.profileImage}
-        />
-        <View style={styles.nameContainer}>
-          <Text style={styles.profileName}>
-            {user?.displayName || user?.email || "Användare"}
-          </Text>
-          <View style={styles.favoriteContainer}>
-            <Icon name="heart" size={24} color="#9E38EE" />
-            <Text style={styles.favoriteCount}>{favoriteCount}</Text>
-          </View>
-        </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => navigation.navigate("EditProfile")}
-          >
-            <Text style={styles.buttonText}>+ bilder</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={() => navigation.navigate("EditMyProfile")}
-          >
-            <Text style={styles.buttonText}>Redigera</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logga ut</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.scissorsContainer}>
-        <Image
-          source={require("../assets/icons/scissors2.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("scissors2") },
-          ]}
-        />
-        <Image
-          source={require("../assets/icons/nail-polish.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("nail-polish") },
-          ]}
-        />
-        <Image
-          source={require("../assets/icons/spa_.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("spa_") },
-          ]}
-        />
-        <Image
-          source={require("../assets/icons/makeup_.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("makeup_") },
-          ]}
-        />
       </View>
 
       <FlatList
@@ -199,7 +207,32 @@ function Profile({ route, navigation }) {
             </TouchableOpacity>
           </View>
         )}
-        contentContainerStyle={styles.galleryContainer}
+        ListHeaderComponent={
+          <>
+            {renderProfileSection()}
+            {renderScissorsContainer()}
+          </>
+        }
+        ListFooterComponent={
+          <TouchableOpacity
+            style={styles.stylistButton}
+            onPress={() =>
+              navigation.navigate("StylistProfile", {
+                stylist: {
+                  salon: user?.salon || "Björn Axén",
+                  ratings: user?.ratings || "4.8",
+                  reviews: user?.reviews || "recensioner",
+                  name: user?.displayName || "Jennifer",
+                  image: user?.photoURL || "default_image",
+                  id: user?.uid || "1",
+                },
+              })
+            }
+          >
+            <Text style={styles.stylistButtonText}>Min Frisör</Text>
+          </TouchableOpacity>
+        }
+        contentContainerStyle={styles.flatListContent}
         ListEmptyComponent={
           <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
         }
@@ -214,6 +247,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   headerTop: {
     backgroundColor: "#7904D4",
@@ -230,6 +270,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 20,
   },
+  flatListContent: {
+    paddingTop: 120,
+  },
   profileSection: {
     alignItems: "center",
     marginVertical: 20,
@@ -240,9 +283,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   profileImage: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     borderRadius: 50,
+    marginTop: 40,
   },
   favoriteContainer: {
     flexDirection: "row",
@@ -306,10 +350,6 @@ const styles = StyleSheet.create({
     height: 40,
     tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
-  galleryContainer: {
-    paddingHorizontal: 5,
-    paddingVertical: 10,
-  },
   imageWrapper: {
     flex: 1 / 3,
     aspectRatio: 1,
@@ -326,7 +366,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 5,
     top: 5,
-    backgroundColor: "rgba(255, 0, 0, 0.7)",
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -342,6 +381,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#666",
     marginTop: 20,
+  },
+  stylistButton: {
+    backgroundColor: "#9E38EE",
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 100,
+    alignItems: "center",
+    zIndex: 1,
+  },
+  stylistButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

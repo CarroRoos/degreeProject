@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { db } from "../config/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const loadGlobalUserFavoriteCounts = createAsyncThunk(
   "users/loadGlobalFavoriteCounts",
@@ -10,6 +11,21 @@ export const loadGlobalUserFavoriteCounts = createAsyncThunk(
       return countsDoc.data();
     }
     return {};
+  }
+);
+
+export const loadLocalUserFavorites = createAsyncThunk(
+  "users/loadLocalUserFavorites",
+  async (currentUserId) => {
+    try {
+      if (!currentUserId) return [];
+      const key = `userFavorites_${currentUserId}`;
+      const storedFavorites = await AsyncStorage.getItem(key);
+      return storedFavorites ? JSON.parse(storedFavorites) : [];
+    } catch (error) {
+      console.error("Error loading local user favorites:", error);
+      return [];
+    }
   }
 );
 
@@ -29,15 +45,31 @@ const updateFirebaseFavoriteCount = async (userId, isAdding) => {
   return newCount;
 };
 
+const saveToLocalStorage = async (currentUserId, favorites) => {
+  try {
+    if (!currentUserId) return;
+    const key = `userFavorites_${currentUserId}`;
+    await AsyncStorage.setItem(key, JSON.stringify(favorites));
+  } catch (error) {
+    console.error("Error saving to AsyncStorage:", error);
+  }
+};
+
 const userSlice = createSlice({
   name: "users",
   initialState: {
+    currentUserId: null,
     users: [],
     filteredUsers: [],
     userFavorites: [],
     favoriteCounts: {},
+    isLoading: false,
+    error: null,
   },
   reducers: {
+    setCurrentUser: (state, action) => {
+      state.currentUserId = action.payload;
+    },
     setUsers: (state, action) => {
       state.users = action.payload;
       state.filteredUsers = action.payload;
@@ -49,45 +81,88 @@ const userSlice = createSlice({
       state.filteredUsers = state.users;
     },
     addUserFavorite: (state, action) => {
-      const user = action.payload;
-      if (!state.userFavorites.some((fav) => fav.uid === user.uid)) {
-        state.userFavorites.push(user);
+      const { currentUserId, favoriteUser } = action.payload;
+      if (!currentUserId) {
+        console.error("No current user ID found");
+        return;
+      }
 
-        state.favoriteCounts[user.uid] =
-          (state.favoriteCounts[user.uid] || 0) + 1;
+      if (!state.userFavorites.some((fav) => fav.uid === favoriteUser.uid)) {
+        state.userFavorites.push(favoriteUser);
+        state.favoriteCounts[favoriteUser.uid] =
+          (state.favoriteCounts[favoriteUser.uid] || 0) + 1;
 
-        updateFirebaseFavoriteCount(user.uid, true);
+        saveToLocalStorage(currentUserId, state.userFavorites);
+        updateFirebaseFavoriteCount(favoriteUser.uid, true);
       }
     },
     removeUserFavorite: (state, action) => {
-      const userId = action.payload;
+      const { currentUserId, userId } = action.payload;
+      if (!currentUserId) {
+        console.error("No current user ID found");
+        return;
+      }
+
       state.userFavorites = state.userFavorites.filter(
         (fav) => fav.uid !== userId
       );
+
       if (state.favoriteCounts[userId] > 0) {
         state.favoriteCounts[userId]--;
-
+        saveToLocalStorage(currentUserId, state.userFavorites);
         updateFirebaseFavoriteCount(userId, false);
       }
     },
     setFavoriteCounts: (state, action) => {
       state.favoriteCounts = action.payload;
     },
+    setError: (state, action) => {
+      state.error = action.payload;
+      state.isLoading = false;
+    },
+    clearUserFavorites: (state) => {
+      state.userFavorites = [];
+    },
   },
   extraReducers: (builder) => {
-    builder.addCase(loadGlobalUserFavoriteCounts.fulfilled, (state, action) => {
-      state.favoriteCounts = action.payload;
-    });
+    builder
+      .addCase(loadGlobalUserFavoriteCounts.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadGlobalUserFavoriteCounts.fulfilled, (state, action) => {
+        state.favoriteCounts = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(loadGlobalUserFavoriteCounts.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
+      })
+      .addCase(loadLocalUserFavorites.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadLocalUserFavorites.fulfilled, (state, action) => {
+        state.userFavorites = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(loadLocalUserFavorites.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
+      });
   },
 });
 
 export const {
+  setCurrentUser,
   setUsers,
   filterUsers,
   resetUsers,
   addUserFavorite,
   removeUserFavorite,
   setFavoriteCounts,
+  setError,
+  clearUserFavorites,
 } = userSlice.actions;
 
 export default userSlice.reducer;

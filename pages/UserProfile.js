@@ -6,6 +6,8 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  ScrollView,
+  Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { addUserFavorite, removeUserFavorite } from "../slices/userSlice";
@@ -18,6 +20,7 @@ import { doc, getDoc } from "firebase/firestore";
 function UserProfile({ route, navigation }) {
   const dispatch = useDispatch();
   const { userId } = route.params;
+  const currentUserId = useSelector((state) => state.users.currentUserId);
   const userFavorites = useSelector((state) => state.users.userFavorites || []);
   const favoriteCounts = useSelector(
     (state) => state.users.favoriteCounts || {}
@@ -57,10 +60,24 @@ function UserProfile({ route, navigation }) {
   };
 
   const handleFavoritePress = () => {
+    if (!currentUserId) {
+      Alert.alert(
+        "Logga in",
+        "Du måste vara inloggad för att favoritmarkera användare"
+      );
+      navigation.navigate("Login");
+      return;
+    }
+
     if (!user || isOwnProfile) return;
 
     if (isFavorite) {
-      dispatch(removeUserFavorite(userId));
+      dispatch(
+        removeUserFavorite({
+          currentUserId: currentUserId,
+          userId: userId,
+        })
+      );
     } else {
       const userObject = {
         uid: user.id,
@@ -68,7 +85,12 @@ function UserProfile({ route, navigation }) {
         photoURL: user.photoURL,
         location: user.location,
       };
-      dispatch(addUserFavorite(userObject));
+      dispatch(
+        addUserFavorite({
+          currentUserId: currentUserId,
+          favoriteUser: userObject,
+        })
+      );
     }
   };
 
@@ -81,91 +103,113 @@ function UserProfile({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <View>
+      <View style={styles.headerContainer}>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profil</Text>
         </View>
       </View>
 
-      <View style={styles.profileSection}>
-        <Image
-          source={{ uri: user?.photoURL || defaultAvatar }}
-          style={styles.profileImage}
-        />
-        <View style={styles.nameContainer}>
-          <Text style={styles.profileName}>
-            {user?.displayName || "Användare"}
-          </Text>
-          <View style={styles.favoriteContainer}>
-            {isOwnProfile ? (
-              <View style={styles.heartContainer}>
-                <Icon name="heart" size={24} color="#9E38EE" />
-                <Text style={styles.favoriteCount}>{favoriteCount}</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.heartContainer}
-                onPress={handleFavoritePress}
-              >
-                <Icon
-                  name={isFavorite ? "heart" : "heart-outline"}
-                  size={24}
-                  color="#9E38EE"
-                />
-                <Text style={styles.favoriteCount}>{favoriteCount}</Text>
-              </TouchableOpacity>
-            )}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.profileSection}>
+          <Image
+            source={{ uri: user?.photoURL || defaultAvatar }}
+            style={styles.profileImage}
+          />
+          <View style={styles.nameContainer}>
+            <Text style={styles.profileName}>
+              {user?.displayName || "Användare"}
+            </Text>
+            <View style={styles.favoriteContainer}>
+              {isOwnProfile ? (
+                <View style={styles.heartContainer}>
+                  <Icon name="heart" size={24} color="#9E38EE" />
+                  <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.heartContainer}
+                  onPress={handleFavoritePress}
+                >
+                  <Icon
+                    name={isFavorite ? "heart" : "heart-outline"}
+                    size={24}
+                    color="#9E38EE"
+                  />
+                  <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
+          {user?.location && (
+            <Text style={styles.location}>{user.location}</Text>
+          )}
         </View>
-        {user?.location && <Text style={styles.location}>{user.location}</Text>}
-      </View>
 
-      <View style={styles.scissorsContainer}>
-        <Image
-          source={require("../assets/icons/scissors2.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("scissors2") },
-          ]}
-        />
-        <Image
-          source={require("../assets/icons/nail-polish.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("nail-polish") },
-          ]}
-        />
-        <Image
-          source={require("../assets/icons/spa_.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("spa_") },
-          ]}
-        />
-        <Image
-          source={require("../assets/icons/makeup_.png")}
-          style={[
-            styles.scissorIcon,
-            { tintColor: styles.scissorIcon.tintColor("makeup_") },
-          ]}
-        />
-      </View>
+        <View style={styles.scissorsContainer}>
+          <Image
+            source={require("../assets/icons/scissors2.png")}
+            style={[
+              styles.scissorIcon,
+              { tintColor: styles.scissorIcon.tintColor("scissors2") },
+            ]}
+          />
+          <Image
+            source={require("../assets/icons/nail-polish.png")}
+            style={[
+              styles.scissorIcon,
+              { tintColor: styles.scissorIcon.tintColor("nail-polish") },
+            ]}
+          />
+          <Image
+            source={require("../assets/icons/spa_.png")}
+            style={[
+              styles.scissorIcon,
+              { tintColor: styles.scissorIcon.tintColor("spa_") },
+            ]}
+          />
+          <Image
+            source={require("../assets/icons/makeup_.png")}
+            style={[
+              styles.scissorIcon,
+              { tintColor: styles.scissorIcon.tintColor("makeup_") },
+            ]}
+          />
+        </View>
 
-      <FlatList
-        data={gallery}
-        numColumns={3}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.imageWrapper}>
-            <Image source={{ uri: item.url }} style={styles.galleryImage} />
-          </View>
-        )}
-        contentContainerStyle={styles.galleryContainer}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
-        }
-      />
+        <FlatList
+          data={gallery}
+          numColumns={3}
+          scrollEnabled={false}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: item.url }} style={styles.galleryImage} />
+            </View>
+          )}
+          contentContainerStyle={styles.galleryContainer}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
+          }
+        />
+        <TouchableOpacity
+          style={styles.stylistButton}
+          onPress={() =>
+            navigation.navigate("StylistProfile", {
+              stylist: {
+                salon: user?.salon || "Björn Axén",
+                ratings: user?.ratings || "4.8",
+                reviews: user?.reviews || "recensioner",
+                name: user?.displayName || "Jennifer",
+                image: user?.photoURL || "default_image",
+                id: user?.id || "1",
+              },
+            })
+          }
+        >
+          <Text style={styles.stylistButtonText}>Min Frisör</Text>
+        </TouchableOpacity>
+      </ScrollView>
       <Footer />
     </View>
   );
@@ -175,6 +219,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  headerContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   headerTop: {
     backgroundColor: "#7904D4",
@@ -191,15 +242,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 20,
   },
+  scrollContent: {
+    paddingTop: 120,
+  },
   profileSection: {
     alignItems: "center",
     marginVertical: 20,
   },
   profileImage: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     borderRadius: 50,
     marginBottom: 10,
+    marginTop: 50,
   },
   nameContainer: {
     alignItems: "center",
@@ -214,11 +269,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  roleText: {
-    fontSize: 24,
-    color: "#555",
-    marginRight: 10,
-  },
   heartContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -232,6 +282,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     marginTop: 5,
+  },
+  scissorsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    paddingVertical: 10,
+    width: "100%",
+    marginBottom: 10,
+  },
+  scissorIcon: {
+    marginTop: 30,
+    width: 40,
+    height: 40,
+    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
   galleryContainer: {
     paddingHorizontal: 5,
@@ -253,19 +317,19 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 20,
   },
-  scissorsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
+  stylistButton: {
+    backgroundColor: "#9E38EE",
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 200,
     alignItems: "center",
-    paddingVertical: 10,
-    width: "100%",
-    marginBottom: 10,
   },
-  scissorIcon: {
-    marginTop: 30,
-    width: 40,
-    height: 40,
-    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
+  stylistButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

@@ -143,7 +143,7 @@ function StylistProfile({ route, navigation }) {
           )}
         />
 
-        <Text style={styles.sectionTitle}>Kund: Frida Nord</Text>
+        <Text style={styles.sectionTitle}>Kund: Amira</Text>
         <FlatList
           data={customerGallery}
           horizontal
@@ -152,8 +152,15 @@ function StylistProfile({ route, navigation }) {
             <Image source={{ uri: item }} style={styles.galleryImage} />
           )}
         />
-        <TouchableOpacity style={styles.customerButton}>
-          <Text style={styles.customerButtonText}>Till Frida</Text>
+        <TouchableOpacity
+          style={styles.customerButton}
+          onPress={() =>
+            navigation.navigate("UserProfile", {
+              userId: "BzoYt1Z5EpY4oIqGOLBvYFMllJp1",
+            })
+          }
+        >
+          <Text style={styles.customerButtonText}>Till Amira</Text>
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Fler tider</Text>

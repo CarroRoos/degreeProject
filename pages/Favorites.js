@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   View,
@@ -9,16 +9,27 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Footer from "../components/Footer";
-import { removeFavorite } from "../slices/salonSlice";
-import { removeUserFavorite } from "../slices/userSlice";
+import { removeFavorite, loadLocalFavorites } from "../slices/salonSlice";
+import {
+  removeUserFavorite,
+  loadLocalUserFavorites,
+} from "../slices/userSlice";
 import { useNavigation } from "@react-navigation/native";
 
 function Favorites() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const currentUserId = useSelector((state) => state.users.currentUserId);
   const favorites = useSelector((state) => state.salons.favorites || []);
   const userFavorites = useSelector((state) => state.users.userFavorites || []);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
+
+  useEffect(() => {
+    if (currentUserId) {
+      dispatch(loadLocalFavorites());
+      dispatch(loadLocalUserFavorites(currentUserId));
+    }
+  }, [currentUserId, dispatch]);
 
   const getImage = (imageName) => {
     try {
@@ -43,6 +54,20 @@ function Favorites() {
       navigation.navigate("StylistProfile", { stylist: item });
     } else {
       navigation.navigate("UserProfile", { userId: item.uid });
+    }
+  };
+
+  const handleRemoveFavorite = (item) => {
+    const isSalon = Boolean(item.ratings);
+    if (isSalon) {
+      dispatch(removeFavorite(item.id));
+    } else {
+      dispatch(
+        removeUserFavorite({
+          currentUserId: currentUserId,
+          userId: item.uid,
+        })
+      );
     }
   };
 
@@ -76,13 +101,7 @@ function Favorites() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.removeButton}
-          onPress={() => {
-            if (isSalon) {
-              dispatch(removeFavorite(item.id));
-            } else {
-              dispatch(removeUserFavorite(item.uid));
-            }
-          }}
+          onPress={() => handleRemoveFavorite(item)}
         >
           <Text style={styles.removeButtonText}>Ta bort</Text>
         </TouchableOpacity>
