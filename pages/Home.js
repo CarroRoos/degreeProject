@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
 import {
   filterSalons,
   resetFilter,
@@ -18,8 +19,6 @@ import { setUsers, filterUsers, resetUsers } from "../slices/userSlice";
 import SalonList from "../SalonList";
 import UserList from "../UserList";
 import Footer from "../components/Footer";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { auth, db } from "../config/firebase";
 import algoliaSearch from "../AlgoliaSearchService";
 
 function Home({ navigation }) {
@@ -31,44 +30,60 @@ function Home({ navigation }) {
   const totalFavorites = favorites.length + userFavorites.length;
   const [searchQuery, setSearchQuery] = useState("");
   const [currentFilter, setCurrentFilter] = useState("forYou");
+  const [userLocation, setUserLocation] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const usersRef = collection(db, "users");
-        const q = auth.currentUser
-          ? query(usersRef, where("email", "!=", auth.currentUser.email))
-          : query(usersRef);
+    const getUserLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Platsbehörighet nekades.");
+        return;
+      }
 
-        const querySnapshot = await getDocs(q);
-        const usersData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        dispatch(setUsers(usersData));
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        console.log("Användarens plats inställd:", location.coords);
       } catch (error) {
-        console.error("Error fetching users: ", error);
+        console.error("Kunde inte hämta plats:", error);
       }
     };
 
-    fetchUsers();
+    getUserLocation();
   }, []);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
-    if (query.trim()) {
-      try {
-        const { salongerResults, usersResults } = await algoliaSearch.search(
-          query
-        );
-        dispatch(setFilteredSalons(salongerResults));
-        dispatch(filterUsers(usersResults));
-      } catch (error) {
-        console.error("Search error:", error);
-      }
-    } else {
-      dispatch(resetFilter());
-      dispatch(resetUsers());
+
+    if (!userLocation || !userLocation.latitude || !userLocation.longitude) {
+      console.error("Användarens plats är inte tillgänglig.");
+      return;
+    }
+
+    const searchOptions = {
+      query,
+      aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
+      aroundRadius: 20000,
+    };
+
+    console.log("Sökparametrar skickade till Algolia:", searchOptions);
+
+    setLoading(true);
+    try {
+      const { salongerResults } = await algoliaSearch.search(
+        query,
+        searchOptions
+      );
+      console.log("Resultat från Algolia:", salongerResults);
+      dispatch(setFilteredSalons(salongerResults));
+    } catch (error) {
+      console.error("Sökning misslyckades:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,6 +94,10 @@ function Home({ navigation }) {
   ];
 
   const renderContent = () => {
+    if (loading) {
+      return <Text style={styles.loadingText}>Laddar resultat...</Text>;
+    }
+
     if (!searchQuery.trim()) {
       return <Text style={styles.heartIcon}>💜</Text>;
     }
@@ -89,13 +108,6 @@ function Home({ navigation }) {
           <>
             <Text style={styles.resultHeader}>Frisörer</Text>
             <SalonList data={filteredList} navigation={navigation} />
-          </>
-        )}
-
-        {filteredUsers?.length > 0 && (
-          <>
-            <Text style={styles.resultHeader}>Användare</Text>
-            <UserList data={filteredUsers} navigation={navigation} />
           </>
         )}
       </>
@@ -223,6 +235,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
+  },
+  loadingText: {
+    textAlign: "center",
+    marginTop: 50,
   },
   heartIcon: {
     fontSize: 10,

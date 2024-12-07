@@ -7,8 +7,25 @@ const ALGOLIA_APP_ID = "UBHJYH9DZZ";
 const ALGOLIA_API_KEY = "b0fb4ded362b98421a89e30a99a8f1ef";
 const ALGOLIA_BASE_URL = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes`;
 
-const search = async (query) => {
+const search = async (query, options = {}) => {
   try {
+    const defaultSearchParams = {
+      query,
+      attributesToRetrieve: [
+        "objectID",
+        "salon",
+        "treatment",
+        "stylist",
+        "id",
+        "time",
+        "distance",
+        "price",
+        "ratings",
+        "image",
+      ],
+      ...options,
+    };
+
     const [salonResponse, userResponse] = await Promise.all([
       fetch(`${ALGOLIA_BASE_URL}/salonger/query`, {
         method: "POST",
@@ -17,21 +34,7 @@ const search = async (query) => {
           "X-Algolia-Application-Id": ALGOLIA_APP_ID,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          query,
-          attributesToRetrieve: [
-            "objectID",
-            "salon",
-            "treatment",
-            "stylist",
-            "id",
-            "time",
-            "distance",
-            "price",
-            "ratings",
-            "image",
-          ],
-        }),
+        body: JSON.stringify(defaultSearchParams),
       }),
       fetch(`${ALGOLIA_BASE_URL}/users/query`, {
         method: "POST",
