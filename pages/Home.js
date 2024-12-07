@@ -59,31 +59,41 @@ function Home({ navigation }) {
   const handleSearch = async (query) => {
     setSearchQuery(query);
 
-    if (!userLocation || !userLocation.latitude || !userLocation.longitude) {
-      console.error("Användarens plats är inte tillgänglig.");
-      return;
-    }
-
-    const searchOptions = {
-      query,
-      aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
-      aroundRadius: 20000,
-    };
-
-    console.log("Sökparametrar skickade till Algolia:", searchOptions);
+    // Only include location parameters for salon search
+    const searchOptions = userLocation
+      ? {
+          query,
+          aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
+          aroundRadius: 20000,
+        }
+      : { query };
 
     setLoading(true);
     try {
-      const { salongerResults } = await algoliaSearch.search(
+      const { salongerResults, usersResults } = await algoliaSearch.search(
         query,
         searchOptions
       );
-      console.log("Resultat från Algolia:", salongerResults);
+      console.log("Resultat från Algolia - Salonger:", salongerResults);
+      console.log("Resultat från Algolia - Users:", usersResults);
+
       dispatch(setFilteredSalons(salongerResults));
+      dispatch(setUsers(usersResults));
     } catch (error) {
       console.error("Sökning misslyckades:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFilter = (filterType) => {
+    setCurrentFilter(filterType);
+    if (filterType === "forYou") {
+      dispatch(resetFilter());
+      dispatch(resetUsers());
+    } else {
+      dispatch(filterSalons(filterType));
+      dispatch(filterUsers(filterType));
     }
   };
 
@@ -108,6 +118,12 @@ function Home({ navigation }) {
           <>
             <Text style={styles.resultHeader}>Frisörer</Text>
             <SalonList data={filteredList} navigation={navigation} />
+          </>
+        )}
+        {filteredUsers?.length > 0 && (
+          <>
+            <Text style={styles.resultHeader}>Användare</Text>
+            <UserList data={filteredUsers} navigation={navigation} />
           </>
         )}
       </>
@@ -138,7 +154,7 @@ function Home({ navigation }) {
             {salonSortOptions.map((option) => (
               <TouchableOpacity
                 key={option.value}
-                onPress={() => setCurrentFilter(option.value)}
+                onPress={() => handleFilter(option.value)}
                 style={[
                   styles.sortOption,
                   currentFilter === option.value && styles.activeSortOption,

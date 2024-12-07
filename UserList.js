@@ -14,13 +14,24 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 const UserList = ({ data, navigation }) => {
   const dispatch = useDispatch();
   const userFavorites = useSelector((state) => state.users.userFavorites || []);
+  const currentUserId = useSelector((state) => state.users.currentUserId);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
   const handleFavoritePress = (user) => {
     if (userFavorites.some((fav) => fav.uid === user.uid)) {
-      dispatch(removeUserFavorite(user.uid));
+      dispatch(
+        removeUserFavorite({
+          currentUserId: currentUserId,
+          userId: user.uid,
+        })
+      );
     } else {
-      dispatch(addUserFavorite(user));
+      dispatch(
+        addUserFavorite({
+          currentUserId: currentUserId,
+          favoriteUser: user,
+        })
+      );
     }
   };
 

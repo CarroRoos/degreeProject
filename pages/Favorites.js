@@ -109,35 +109,42 @@ function Favorites() {
     );
   };
 
+  const safeFavorites = favorites.filter((item) => item.id !== undefined);
+  const safeUserFavorites = userFavorites.filter(
+    (item) => item.uid !== undefined
+  );
+
   return (
     <View style={styles.container}>
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            Favoriter ({favorites.length + userFavorites.length})
+            Favoriter ({safeFavorites.length + safeUserFavorites.length})
           </Text>
         </View>
       </View>
 
-      {favorites.length > 0 || userFavorites.length > 0 ? (
+      {safeFavorites.length > 0 || safeUserFavorites.length > 0 ? (
         <FlatList
           data={[
             { type: "header", id: "salonHeader", title: "Frisörer" },
-            ...favorites,
+            ...safeFavorites,
             { type: "header", id: "userHeader", title: "Användare" },
-            ...userFavorites,
+            ...safeUserFavorites,
           ]}
-          keyExtractor={(item) => {
+          keyExtractor={(item, index) => {
             if (item.type === "header") return item.id;
-            return item.ratings ? `salon-${item.id}` : `user-${item.uid}`;
+            return item.ratings
+              ? `salon-${item.id || `undefined-${index}`}`
+              : `user-${item.uid || `undefined-${index}`}`;
           }}
           renderItem={({ item }) => {
             if (item.type === "header") {
               const shouldShow =
                 item.id === "salonHeader"
-                  ? favorites.length > 0
-                  : userFavorites.length > 0;
+                  ? safeFavorites.length > 0
+                  : safeUserFavorites.length > 0;
 
               return shouldShow ? (
                 <Text style={styles.sectionHeader}>{item.title}</Text>
@@ -153,7 +160,9 @@ function Favorites() {
         </View>
       )}
 
-      <Footer favoritesCount={favorites.length + userFavorites.length} />
+      <Footer
+        favoritesCount={safeFavorites.length + safeUserFavorites.length}
+      />
     </View>
   );
 }
