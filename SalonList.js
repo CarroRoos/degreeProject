@@ -1,8 +1,16 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { addFavorite, removeFavorite } from "./slices/salonSlice";
+import { auth } from "./config/firebase";
 
 const SalonList = ({ data }) => {
   const navigation = useNavigation();
@@ -13,24 +21,42 @@ const SalonList = ({ data }) => {
     navigation.navigate("SalonDetail", { salon });
   };
 
-  const handleFavoritePress = (salon) => {
-    // Använd objectID om det finns, annars id
-    const salonId = salon.objectID || salon.id;
-    const salonWithId = { ...salon, id: salonId };
-
-    const isFavorite = favorites.some(
-      (fav) => (fav.objectID || fav.id) === salonId
-    );
-    if (isFavorite) {
-      dispatch(removeFavorite(salonId));
-    } else {
-      dispatch(addFavorite(salonWithId));
-    }
-  };
-
   const isFavorite = (salon) => {
     const salonId = salon.objectID || salon.id;
-    return favorites.some((fav) => (fav.objectID || fav.id) === salonId);
+    return favorites.some(
+      (fav) => (fav.objectID || fav.id || fav.favoriteId) === salonId
+    );
+  };
+
+  const handleFavoritePress = (salon) => {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      Alert.alert("Error", "Du måste vara inloggad för att favoritmarkera");
+      return;
+    }
+
+    const salonId = salon.objectID || salon.id;
+    const salonWithId = { ...salon, id: salonId };
+    const isFavorited = isFavorite(salon);
+
+    if (isFavorited) {
+      console.log("Removing favorite:", salonId);
+      dispatch(
+        removeFavorite({
+          currentUserId: currentUser.uid,
+          salonId: salonId,
+        })
+      );
+    } else {
+      console.log("Adding favorite:", salonWithId);
+      dispatch(
+        addFavorite({
+          currentUserId: currentUser.uid,
+          salon: salonWithId,
+        })
+      );
+    }
   };
 
   const getTreatmentText = (salon) => {

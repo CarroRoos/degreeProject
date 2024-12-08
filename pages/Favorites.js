@@ -1,5 +1,4 @@
-import React, { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,72 +6,104 @@ import {
   Image,
   Text,
   TouchableOpacity,
+  Alert,
 } from "react-native";
+import { useDispatch } from "react-redux";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db, auth } from "../config/firebase";
+import { removeFavorite } from "../slices/salonSlice";
+import { removeUserFavorite } from "../slices/userSlice";
 import Footer from "../components/Footer";
-import { removeFavorite, loadLocalFavorites } from "../slices/salonSlice";
-import {
-  removeUserFavorite,
-  loadLocalUserFavorites,
-} from "../slices/userSlice";
 import { useNavigation } from "@react-navigation/native";
 
 function Favorites() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const currentUserId = useSelector((state) => state.users.currentUserId);
-  const favorites = useSelector((state) => state.salons.favorites || []);
-  const userFavorites = useSelector((state) => state.users.userFavorites || []);
+  const [favorites, setFavorites] = useState([]);
+  const [userFavorites, setUserFavorites] = useState([]);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
   useEffect(() => {
-    if (currentUserId) {
-      dispatch(loadLocalFavorites());
-      dispatch(loadLocalUserFavorites(currentUserId));
-    }
-  }, [currentUserId, dispatch]);
-
-  const getImage = (imageName) => {
-    try {
-      switch (imageName) {
-        case "freddie":
-          return require("../assets/images/freddie.jpg");
-        case "samira":
-          return require("../assets/images/samira.jpg");
-        case "jennifer":
-          return require("../assets/images/jennifer.jpg");
-        default:
-          return null;
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadFavorites(user.uid);
       }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const loadFavorites = async (userId) => {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("userId", "==", userId)
+      );
+      const querySnapshot = await getDocs(favoritesQuery);
+      const salons = [];
+      const users = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = { ...doc.data(), docId: doc.id };
+        if (data.type === "Salon") {
+          salons.push(data);
+        } else if (data.type === "User") {
+          users.push(data);
+        }
+      });
+
+      setFavorites(salons);
+      setUserFavorites(users);
     } catch (error) {
-      console.error(`Error loading image for ${imageName}:`, error);
-      return null;
+      console.error("Error loading favorites:", error);
+    }
+  };
+
+  const handleRemoveFavorite = async (item) => {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      Alert.alert("Error", "Ingen inloggad användare");
+      return;
+    }
+
+    try {
+      if (item.type === "Salon") {
+        await dispatch(
+          removeFavorite({
+            currentUserId: currentUser.uid,
+            salonId: item.id || item.favoriteId,
+          })
+        ).unwrap();
+      } else if (item.type === "User") {
+        await dispatch(
+          removeUserFavorite({
+            currentUserId: currentUser.uid,
+            userId: item.favoriteId,
+          })
+        ).unwrap();
+      }
+
+      await loadFavorites(currentUser.uid);
+    } catch (error) {
+      Alert.alert("Error", `Kunde inte ta bort favorit: ${error.message}`);
     }
   };
 
   const handleCardPress = (item) => {
-    if (item.ratings) {
+    if (item.type === "Salon") {
       navigation.navigate("StylistProfile", { stylist: item });
     } else {
-      navigation.navigate("UserProfile", { userId: item.uid });
-    }
-  };
-
-  const handleRemoveFavorite = (item) => {
-    const isSalon = Boolean(item.ratings);
-    if (isSalon) {
-      dispatch(removeFavorite(item.id));
-    } else {
-      dispatch(
-        removeUserFavorite({
-          currentUserId: currentUserId,
-          userId: item.uid,
-        })
-      );
+      navigation.navigate("UserProfile", { userId: item.favoriteId });
     }
   };
 
   const renderFavoriteCard = ({ item }) => {
-    const isSalon = Boolean(item.ratings);
+    const isSalon = item.type === "Salon";
 
     return (
       <View style={styles.card}>
@@ -83,7 +114,7 @@ function Favorites() {
           <Image
             source={
               isSalon
-                ? getImage(item.image) || { uri: defaultAvatar }
+                ? { uri: item.image || defaultAvatar }
                 : { uri: item.photoURL || defaultAvatar }
             }
             style={styles.profileImage}
@@ -94,13 +125,16 @@ function Favorites() {
             </Text>
             <Text style={styles.info}>
               {isSalon
-                ? `${item.treatment} • ${item.distance}`
+                ? `${item.treatment || "Behandling"} • ${
+                    item.distance || "Avstånd"
+                  }`
                 : item.location || "Plats ej angiven"}
             </Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.removeButton}
+          activeOpacity={0.7}
           onPress={() => handleRemoveFavorite(item)}
         >
           <Text style={styles.removeButtonText}>Ta bort</Text>
@@ -109,42 +143,35 @@ function Favorites() {
     );
   };
 
-  const safeFavorites = favorites.filter((item) => item.id !== undefined);
-  const safeUserFavorites = userFavorites.filter(
-    (item) => item.uid !== undefined
-  );
-
   return (
     <View style={styles.container}>
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            Favoriter ({safeFavorites.length + safeUserFavorites.length})
+            Favoriter ({favorites.length + userFavorites.length})
           </Text>
         </View>
       </View>
 
-      {safeFavorites.length > 0 || safeUserFavorites.length > 0 ? (
+      {favorites.length > 0 || userFavorites.length > 0 ? (
         <FlatList
           data={[
             { type: "header", id: "salonHeader", title: "Frisörer" },
-            ...safeFavorites,
+            ...favorites,
             { type: "header", id: "userHeader", title: "Användare" },
-            ...safeUserFavorites,
+            ...userFavorites,
           ]}
           keyExtractor={(item, index) => {
             if (item.type === "header") return item.id;
-            return item.ratings
-              ? `salon-${item.id || `undefined-${index}`}`
-              : `user-${item.uid || `undefined-${index}`}`;
+            return `favorite-${item.docId || item.favoriteId}-${index}`;
           }}
           renderItem={({ item }) => {
             if (item.type === "header") {
               const shouldShow =
                 item.id === "salonHeader"
-                  ? safeFavorites.length > 0
-                  : safeUserFavorites.length > 0;
+                  ? favorites.length > 0
+                  : userFavorites.length > 0;
 
               return shouldShow ? (
                 <Text style={styles.sectionHeader}>{item.title}</Text>
@@ -160,9 +187,7 @@ function Favorites() {
         </View>
       )}
 
-      <Footer
-        favoritesCount={safeFavorites.length + safeUserFavorites.length}
-      />
+      <Footer favoritesCount={favorites.length + userFavorites.length} />
     </View>
   );
 }
@@ -243,7 +268,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     marginBottom: 15,
     backgroundColor: "#CA95FF",
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 8,
     alignItems: "center",
   },

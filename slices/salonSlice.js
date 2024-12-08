@@ -1,55 +1,141 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { db } from "../config/firebase";
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-export const loadGlobalFavoriteCounts = createAsyncThunk(
-  "salons/loadGlobalFavoriteCounts",
-  async () => {
-    const countsDoc = await getDoc(doc(db, "globalCounts", "favorites"));
-    if (countsDoc.exists()) {
-      return countsDoc.data();
-    }
-    return {};
-  }
-);
 
 export const loadLocalFavorites = createAsyncThunk(
   "salons/loadLocalFavorites",
   async () => {
     try {
-      const storedFavorites = await AsyncStorage.getItem("salonFavorites");
-      return storedFavorites ? JSON.parse(storedFavorites) : [];
+      const localFavorites = await AsyncStorage.getItem("salonFavorites");
+      return localFavorites ? JSON.parse(localFavorites) : [];
     } catch (error) {
-      console.error("Error loading local favorites:", error);
-      return [];
+      console.error("Error loading local salon favorites:", error);
+      throw error;
     }
   }
 );
 
-const updateFirebaseFavoriteCount = async (salonId, isAdding) => {
-  const countsRef = doc(db, "globalCounts", "favorites");
-  const countsDoc = await getDoc(countsRef);
+export const loadGlobalFavoriteCounts = createAsyncThunk(
+  "salons/loadGlobalFavoriteCounts",
+  async () => {
+    try {
+      const countsRef = collection(db, "globalCounts");
+      const querySnapshot = await getDocs(
+        query(countsRef, where("type", "==", "Salon"))
+      );
 
-  const currentCount = countsDoc.exists() ? countsDoc.data()[salonId] || 0 : 0;
-  const newCount = isAdding ? currentCount + 1 : Math.max(currentCount - 1, 0);
+      const favoriteCounts = {};
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        favoriteCounts[data.salonId] = data.count;
+      });
 
-  if (!countsDoc.exists()) {
-    await setDoc(countsRef, { [salonId]: newCount });
-  } else {
-    await updateDoc(countsRef, { [salonId]: newCount });
+      return favoriteCounts;
+    } catch (error) {
+      console.error("Error loading global favorite counts:", error);
+      throw error;
+    }
   }
+);
 
-  return newCount;
-};
+export const loadFavorites = createAsyncThunk(
+  "salons/loadFavorites",
+  async (currentUserId) => {
+    try {
+      if (!currentUserId) throw new Error("No user ID provided");
 
-const saveToLocalStorage = async (favorites) => {
-  try {
-    await AsyncStorage.setItem("salonFavorites", JSON.stringify(favorites));
-  } catch (error) {
-    console.error("Error saving to AsyncStorage:", error);
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("userId", "==", currentUserId),
+        where("type", "==", "Salon")
+      );
+
+      const querySnapshot = await getDocs(favoritesQuery);
+      const favorites = [];
+      querySnapshot.forEach((doc) => {
+        favorites.push(doc.data());
+      });
+
+      await AsyncStorage.setItem("salonFavorites", JSON.stringify(favorites));
+      return favorites;
+    } catch (error) {
+      console.error("Error loading salon favorites:", error);
+      throw error;
+    }
   }
-};
+);
+
+export const addFavorite = createAsyncThunk(
+  "salons/addFavorite",
+  async ({ currentUserId, salon }) => {
+    try {
+      if (!currentUserId) throw new Error("No user ID provided");
+
+      const docRef = doc(db, "favorites", `${currentUserId}-${salon.id}`);
+      await setDoc(docRef, {
+        userId: currentUserId,
+        favoriteId: salon.id,
+        type: "Salon",
+        ...salon,
+      });
+
+      const localFavorites = await AsyncStorage.getItem("salonFavorites");
+      const favorites = localFavorites ? JSON.parse(localFavorites) : [];
+      favorites.push(salon);
+      await AsyncStorage.setItem("salonFavorites", JSON.stringify(favorites));
+
+      return salon;
+    } catch (error) {
+      console.error("Error adding salon favorite:", error);
+      throw error;
+    }
+  }
+);
+
+export const removeFavorite = createAsyncThunk(
+  "salons/removeFavorite",
+  async ({ currentUserId, salonId }) => {
+    try {
+      if (!currentUserId) throw new Error("No user ID provided");
+
+      console.log("Removing favorite with params:", { currentUserId, salonId });
+
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("userId", "==", currentUserId),
+        where("favoriteId", "==", salonId),
+        where("type", "==", "Salon")
+      );
+
+      const querySnapshot = await getDocs(favoritesQuery);
+      console.log("Found documents to remove:", querySnapshot.size);
+
+      querySnapshot.forEach(async (doc) => {
+        console.log("Removing document:", doc.id);
+        await deleteDoc(doc.ref);
+      });
+
+      const localFavorites = await AsyncStorage.getItem("salonFavorites");
+      let favorites = localFavorites ? JSON.parse(localFavorites) : [];
+      favorites = favorites.filter((fav) => fav.favoriteId !== salonId);
+      await AsyncStorage.setItem("salonFavorites", JSON.stringify(favorites));
+
+      return salonId;
+    } catch (error) {
+      console.error("Error removing salon favorite:", error);
+      throw error;
+    }
+  }
+);
 
 const salonSlice = createSlice({
   name: "salons",
@@ -69,37 +155,6 @@ const salonSlice = createSlice({
     setFilteredSalons: (state, action) => {
       state.filteredList = action.payload;
     },
-    setFavoriteCounts: (state, action) => {
-      state.favoriteCounts = action.payload;
-    },
-    addFavorite: (state, action) => {
-      const salon = action.payload;
-      if (!state.favorites.some((fav) => fav.id === salon.id)) {
-        state.favorites.push(salon);
-        state.favoriteCounts[salon.id] =
-          (state.favoriteCounts[salon.id] || 0) + 1;
-
-        saveToLocalStorage(state.favorites);
-
-        updateFirebaseFavoriteCount(salon.id, true).then((newCount) => {
-          state.favoriteCounts[salon.id] = newCount;
-        });
-      }
-    },
-    removeFavorite: (state, action) => {
-      const salonId = action.payload;
-      state.favorites = state.favorites.filter((fav) => fav.id !== salonId);
-
-      if (state.favoriteCounts[salonId] > 0) {
-        state.favoriteCounts[salonId] = state.favoriteCounts[salonId] - 1;
-
-        saveToLocalStorage(state.favorites);
-
-        updateFirebaseFavoriteCount(salonId, false).then((newCount) => {
-          state.favoriteCounts[salonId] = newCount;
-        });
-      }
-    },
     setError: (state, action) => {
       state.error = action.payload;
       state.isLoading = false;
@@ -107,18 +162,6 @@ const salonSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadGlobalFavoriteCounts.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(loadGlobalFavoriteCounts.fulfilled, (state, action) => {
-        state.favoriteCounts = action.payload;
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(loadGlobalFavoriteCounts.rejected, (state, action) => {
-        state.error = action.error.message;
-        state.isLoading = false;
-      })
       .addCase(loadLocalFavorites.pending, (state) => {
         state.isLoading = true;
       })
@@ -130,17 +173,62 @@ const salonSlice = createSlice({
       .addCase(loadLocalFavorites.rejected, (state, action) => {
         state.error = action.error.message;
         state.isLoading = false;
+      })
+      .addCase(loadGlobalFavoriteCounts.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadGlobalFavoriteCounts.fulfilled, (state, action) => {
+        state.favoriteCounts = action.payload;
+        state.isLoading = false;
+      })
+      .addCase(loadGlobalFavoriteCounts.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
+      })
+      .addCase(loadFavorites.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadFavorites.fulfilled, (state, action) => {
+        state.favorites = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(loadFavorites.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
+      })
+      .addCase(addFavorite.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(addFavorite.fulfilled, (state, action) => {
+        state.favorites.push(action.payload);
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(addFavorite.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
+      })
+      .addCase(removeFavorite.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(removeFavorite.fulfilled, (state, action) => {
+        console.log("Current favorites:", state.favorites);
+        console.log("Removing salonId:", action.payload);
+        state.favorites = state.favorites.filter(
+          (fav) => (fav.id || fav.favoriteId || fav.objectID) !== action.payload
+        );
+        console.log("Updated favorites:", state.favorites);
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(removeFavorite.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
       });
   },
 });
 
-export const {
-  setSalons,
-  setFilteredSalons,
-  addFavorite,
-  removeFavorite,
-  setFavoriteCounts,
-  setError,
-} = salonSlice.actions;
+export const { setSalons, setFilteredSalons, setError } = salonSlice.actions;
 
 export default salonSlice.reducer;

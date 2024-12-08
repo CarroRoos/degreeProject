@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -10,50 +10,25 @@ import {
 } from "react-native";
 import Footer from "../components/Footer";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { useDispatch, useSelector } from "react-redux";
-import { addFavorite, removeFavorite } from "../slices/salonSlice";
+import { db, auth } from "../config/firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 function StylistProfile({ route, navigation }) {
   const { stylist } = route.params;
+  const currentUserId = auth.currentUser?.uid;
 
-  const dispatch = useDispatch();
-  const favorites = useSelector((state) => state.salons.favorites || []);
-  const favoriteCounts = useSelector(
-    (state) => state.salons.favoriteCounts || {}
-  );
-  const isFavorite = favorites.some((fav) => fav.id === stylist.id);
-  const favoriteCount = favoriteCounts[stylist.id] || 0;
-
-  const getImage = (imageName) => {
-    try {
-      switch (imageName) {
-        case "freddie":
-          return require("../assets/images/freddie.jpg");
-        case "samira":
-          return require("../assets/images/samira.jpg");
-        case "jennifer":
-          return require("../assets/images/jennifer.jpg");
-        default:
-          return null;
-      }
-    } catch (error) {
-      console.error(`Error loading image for ${imageName}:`, error);
-      return null;
-    }
-  };
-
-  const toggleFavorite = () => {
-    if (isFavorite) {
-      dispatch(removeFavorite(stylist.id));
-    } else {
-      dispatch(addFavorite(stylist));
-    }
-  };
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
 
   const gallery = [
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
@@ -63,10 +38,57 @@ function StylistProfile({ route, navigation }) {
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
   ];
+
+  useEffect(() => {
+    const loadFavoriteData = async () => {
+      try {
+        const favoriteQuery = query(
+          collection(db, "favorites"),
+          where("userId", "==", currentUserId),
+          where("favoriteId", "==", stylist.id),
+          where("type", "==", "Salon")
+        );
+        const favoriteSnapshot = await getDocs(favoriteQuery);
+        setIsFavorite(!favoriteSnapshot.empty);
+
+        const countQuery = query(
+          collection(db, "favorites"),
+          where("favoriteId", "==", stylist.id),
+          where("type", "==", "Salon")
+        );
+        const countSnapshot = await getDocs(countQuery);
+        setFavoriteCount(countSnapshot.size);
+      } catch (error) {
+        console.error("Error loading favorite data:", error);
+      }
+    };
+
+    loadFavoriteData();
+  }, [currentUserId, stylist.id]);
+
+  const toggleFavorite = async () => {
+    try {
+      const docRef = doc(db, "favorites", `${currentUserId}-${stylist.id}`);
+      if (isFavorite) {
+        await deleteDoc(docRef);
+        setIsFavorite(false);
+        setFavoriteCount((prev) => Math.max(prev - 1, 0));
+      } else {
+        await setDoc(docRef, {
+          userId: currentUserId,
+          favoriteId: stylist.id,
+          type: "Salon",
+          stylistName: stylist.name,
+          salonName: stylist.salon,
+        });
+        setIsFavorite(true);
+        setFavoriteCount((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
 
   const handleBooking = () => {
     navigation.navigate("BookingConfirmation", {
@@ -80,11 +102,7 @@ function StylistProfile({ route, navigation }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Image
-          source={
-            getImage(stylist.image) || {
-              uri: "https://via.placeholder.com/500x200",
-            }
-          }
+          source={{ uri: "https://via.placeholder.com/500x200" }}
           style={styles.placeholderImage}
         />
 
@@ -162,48 +180,6 @@ function StylistProfile({ route, navigation }) {
         >
           <Text style={styles.customerButtonText}>Till Amira</Text>
         </TouchableOpacity>
-
-        <Text style={styles.sectionTitle}>Fler tider</Text>
-        <View style={styles.timeSection}>
-          <Text style={styles.timeText}>17:00</Text>
-          <Text style={styles.timePrice}>1200 kr</Text>
-          <TouchableOpacity
-            style={styles.bookingButton}
-            onPress={handleBooking}
-          >
-            <Text style={styles.bookingButtonText}>Boka</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.timeSection}>
-          <Text style={styles.timeText}>18:30</Text>
-          <Text style={styles.timePrice}>1200 kr</Text>
-          <TouchableOpacity
-            style={styles.bookingButton}
-            onPress={handleBooking}
-          >
-            <Text style={styles.bookingButtonText}>Boka</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionTitle}>Plats:</Text>
-        <Text style={styles.placeText}>Karlaplan 12, 300 m</Text>
-        <View style={styles.mapPlaceholder}>
-          <Text>Karta här</Text>
-        </View>
-
-        <Text style={styles.sectionTitle}>Behandling hemma hos dig</Text>
-        <View style={styles.timeSection}>
-          <Text style={styles.timeText}>20:00</Text>
-          <Text style={styles.timePrice}>2500 kr</Text>
-          <TouchableOpacity style={styles.requestButton}>
-            <Text style={styles.requestButtonText}>Förfrågan</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.sectionTitle}>Låt frisören komma hem till dig</Text>
-        <Text style={styles.homeServiceText}>
-          Om det är enklast att genomföra det hemma hos dig, då ordnar vi det.
-          Priset gäller klipp, färg och styling.
-        </Text>
       </ScrollView>
       <Footer />
     </View>

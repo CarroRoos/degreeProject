@@ -7,27 +7,28 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import Footer from "../components/Footer";
-import { auth, storage } from "../config/firebase";
+import { auth, storage, db } from "../config/firebase";
 import { signOut } from "firebase/auth";
 import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { setCurrentUser, clearUserFavorites } from "../slices/userSlice";
 
-function Profile({ route, navigation }) {
+function Profile({ navigation }) {
   const dispatch = useDispatch();
-  const favoriteCounts = useSelector(
-    (state) => state.users.favoriteCounts || {}
-  );
   const [gallery, setGallery] = useState([]);
   const [user, setUser] = useState(null);
+  const [favoriteCount, setFavoriteCount] = useState(0);
+  const [favoriteSalon, setFavoriteSalon] = useState(null);
+  const [loadingGallery, setLoadingGallery] = useState(false);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
-  const currentUserId = auth.currentUser?.uid;
-  const favoriteCount = favoriteCounts[currentUserId] || 0;
 
   const loadUserImages = async (userId) => {
+    setLoadingGallery(true);
     try {
       const imagesRef = ref(storage, `users/${userId}/images`);
       const imagesList = await listAll(imagesRef);
@@ -44,6 +45,40 @@ function Profile({ route, navigation }) {
       setGallery(images.reverse());
     } catch (error) {
       console.error("Error loading images:", error);
+    } finally {
+      setLoadingGallery(false);
+    }
+  };
+
+  const loadFavoriteCount = async (userId) => {
+    try {
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("userId", "==", userId)
+      );
+      const querySnapshot = await getDocs(favoritesQuery);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error("Error loading favorite count:", error);
+      return 0;
+    }
+  };
+
+  const loadFavoriteSalon = async (userId) => {
+    try {
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("userId", "==", userId),
+        where("type", "==", "Salon")
+      );
+      const querySnapshot = await getDocs(favoritesQuery);
+      if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error loading favorite salon:", error);
+      return null;
     }
   };
 
@@ -82,7 +117,6 @@ function Profile({ route, navigation }) {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-
       dispatch(setCurrentUser(null));
       dispatch(clearUserFavorites());
       navigation.replace("Login");
@@ -92,10 +126,16 @@ function Profile({ route, navigation }) {
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
         loadUserImages(currentUser.uid);
+
+        const count = await loadFavoriteCount(currentUser.uid);
+        setFavoriteCount(count);
+
+        const salon = await loadFavoriteSalon(currentUser.uid);
+        setFavoriteSalon(salon);
       }
     });
 
@@ -112,77 +152,6 @@ function Profile({ route, navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  const renderProfileSection = () => (
-    <View style={styles.profileSection}>
-      <Image
-        source={{
-          uri: user?.photoURL || defaultAvatar,
-        }}
-        style={styles.profileImage}
-      />
-      <View style={styles.nameContainer}>
-        <Text style={styles.profileName}>
-          {user?.displayName || user?.email || "Användare"}
-        </Text>
-        <View style={styles.favoriteContainer}>
-          <Icon name="heart" size={24} color="#9E38EE" />
-          <Text style={styles.favoriteCount}>{favoriteCount}</Text>
-        </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => navigation.navigate("EditProfile")}
-        >
-          <Text style={styles.buttonText}>+ bilder</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={() => navigation.navigate("EditMyProfile")}
-        >
-          <Text style={styles.buttonText}>Redigera</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logga ut</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderScissorsContainer = () => (
-    <View style={styles.scissorsContainer}>
-      <Image
-        source={require("../assets/icons/scissors2.png")}
-        style={[
-          styles.scissorIcon,
-          { tintColor: styles.scissorIcon.tintColor("scissors2") },
-        ]}
-      />
-      <Image
-        source={require("../assets/icons/nail-polish.png")}
-        style={[
-          styles.scissorIcon,
-          { tintColor: styles.scissorIcon.tintColor("nail-polish") },
-        ]}
-      />
-      <Image
-        source={require("../assets/icons/spa_.png")}
-        style={[
-          styles.scissorIcon,
-          { tintColor: styles.scissorIcon.tintColor("spa_") },
-        ]}
-      />
-      <Image
-        source={require("../assets/icons/makeup_.png")}
-        style={[
-          styles.scissorIcon,
-          { tintColor: styles.scissorIcon.tintColor("makeup_") },
-        ]}
-      />
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -192,51 +161,86 @@ function Profile({ route, navigation }) {
         </View>
       </View>
 
-      <FlatList
-        data={gallery}
-        numColumns={3}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.imageWrapper}>
-            <Image source={{ uri: item.url }} style={styles.galleryImage} />
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDeleteImage(item.path)}
-            >
-              <Text style={styles.deleteButtonText}>×</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        ListHeaderComponent={
-          <>
-            {renderProfileSection()}
-            {renderScissorsContainer()}
-          </>
-        }
-        ListFooterComponent={
-          <TouchableOpacity
-            style={styles.stylistButton}
-            onPress={() =>
-              navigation.navigate("StylistProfile", {
-                stylist: {
-                  salon: user?.salon || "Björn Axén",
-                  ratings: user?.ratings || "4.8",
-                  reviews: user?.reviews || "recensioner",
-                  name: user?.displayName || "Jennifer",
-                  image: user?.photoURL || "default_image",
-                  id: user?.uid || "1",
-                },
-              })
-            }
-          >
-            <Text style={styles.stylistButtonText}>Min Frisör</Text>
-          </TouchableOpacity>
-        }
-        contentContainerStyle={styles.flatListContent}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
-        }
-      />
+      {loadingGallery ? (
+        <ActivityIndicator size="large" color="#9E38EE" />
+      ) : (
+        <FlatList
+          data={gallery}
+          numColumns={3}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: item.url }} style={styles.galleryImage} />
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteImage(item.path)}
+              >
+                <Text style={styles.deleteButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          ListHeaderComponent={
+            <>
+              <View style={styles.profileSection}>
+                <Image
+                  source={{
+                    uri: user?.photoURL || defaultAvatar,
+                  }}
+                  style={styles.profileImage}
+                />
+                <View style={styles.nameContainer}>
+                  <Text style={styles.profileName}>
+                    {user?.displayName || user?.email || "Användare"}
+                  </Text>
+                  <View style={styles.favoriteContainer}>
+                    <Icon name="heart" size={24} color="#9E38EE" />
+                    <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+                  </View>
+                </View>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => navigation.navigate("EditProfile")}
+                  >
+                    <Text style={styles.buttonText}>+ bilder</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.shareButton}
+                    onPress={() => navigation.navigate("EditMyProfile")}
+                  >
+                    <Text style={styles.buttonText}>Redigera</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={styles.logoutButton}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.logoutButtonText}>Logga ut</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={styles.stylistButton}
+                onPress={() =>
+                  navigation.navigate("StylistProfile", {
+                    stylist: favoriteSalon || {
+                      salon: "Standard Salong",
+                      ratings: "4.8",
+                      reviews: "0 recensioner",
+                      name: "Ingen favorit vald",
+                    },
+                  })
+                }
+              >
+                <Text style={styles.stylistButtonText}>Min Frisör</Text>
+              </TouchableOpacity>
+            </>
+          }
+          contentContainerStyle={styles.flatListContent}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
+          }
+        />
+      )}
 
       <Footer />
     </View>
