@@ -10,6 +10,8 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db, auth } from "../config/firebase";
 import {
   filterSalons,
   resetFilter,
@@ -25,13 +27,31 @@ function Home({ navigation }) {
   const dispatch = useDispatch();
   const { filteredList } = useSelector((state) => state.salons);
   const { filteredUsers } = useSelector((state) => state.users);
-  const favorites = useSelector((state) => state.salons.favorites || []);
-  const userFavorites = useSelector((state) => state.users.userFavorites || []);
-  const totalFavorites = favorites.length + userFavorites.length;
   const [searchQuery, setSearchQuery] = useState("");
   const [currentFilter, setCurrentFilter] = useState("forYou");
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+
+  useEffect(() => {
+    const loadFavoritesCount = async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      try {
+        const favoritesQuery = query(
+          collection(db, "favorites"),
+          where("userId", "==", currentUser.uid)
+        );
+        const querySnapshot = await getDocs(favoritesQuery);
+        setFavoritesCount(querySnapshot.size);
+      } catch (error) {
+        console.error("Error loading favorites count:", error);
+      }
+    };
+
+    loadFavoritesCount();
+  }, []);
 
   useEffect(() => {
     const getUserLocation = async () => {
@@ -59,7 +79,6 @@ function Home({ navigation }) {
   const handleSearch = async (query) => {
     setSearchQuery(query);
 
-    // Only include location parameters for salon search
     const searchOptions = userLocation
       ? {
           query,
@@ -182,7 +201,7 @@ function Home({ navigation }) {
         style={styles.resultSection}
       />
 
-      <Footer favoritesCount={totalFavorites} />
+      <Footer favoritesCount={favoritesCount} />
     </View>
   );
 }

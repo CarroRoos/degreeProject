@@ -1,24 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db, auth } from "../config/firebase";
 
 function Footer({ disableHighlight = true }) {
   const navigation = useNavigation();
   const route = useRoute();
+  const [favoritesCount, setFavoritesCount] = useState(0);
 
-  const salonFavorites = useSelector(
-    (state) => state.salons?.favorites?.length || 0
-  );
-  const userFavorites = useSelector(
-    (state) => state.users?.userFavorites?.length || 0
-  );
-  const totalFavorites = salonFavorites + userFavorites;
+  useEffect(() => {
+    const loadFavoritesCount = async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      try {
+        const favoritesQuery = query(
+          collection(db, "favorites"),
+          where("userId", "==", currentUser.uid)
+        );
+        const querySnapshot = await getDocs(favoritesQuery);
+        setFavoritesCount(querySnapshot.size);
+      } catch (error) {
+        console.error("Error loading favorites count:", error);
+      }
+    };
+
+    loadFavoritesCount();
+  }, [route.name]);
 
   return (
     <View style={styles.footer}>
-      {/* Hem */}
+      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Home")}
         style={styles.footerItem}
@@ -30,7 +44,7 @@ function Footer({ disableHighlight = true }) {
         />
       </TouchableOpacity>
 
-      {/* Favoriter */}
+      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Favorites")}
         style={styles.footerItem}
@@ -42,14 +56,14 @@ function Footer({ disableHighlight = true }) {
             disableHighlight && route.name === "Favorites" ? "#9E38EE" : "#000"
           }
         />
-        {totalFavorites > 0 && (
+        {favoritesCount > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{String(totalFavorites)}</Text>
+            <Text style={styles.badgeText}>{String(favoritesCount)}</Text>
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Bokningar */}
+      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Bookings")}
         style={styles.footerItem}
@@ -63,7 +77,7 @@ function Footer({ disableHighlight = true }) {
         />
       </TouchableOpacity>
 
-      {/* Profil */}
+      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Profile")}
         style={styles.footerItem}
