@@ -17,6 +17,7 @@ import { ref, listAll, getDownloadURL, deleteObject } from "firebase/storage";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { setCurrentUser, clearUserFavorites } from "../slices/userSlice";
+import { clearFavorites } from "../slices/salonSlice";
 
 function Profile({ navigation }) {
   const dispatch = useDispatch();
@@ -54,7 +55,8 @@ function Profile({ navigation }) {
     try {
       const favoritesQuery = query(
         collection(db, "favorites"),
-        where("userId", "==", userId)
+        where("favoriteId", "==", userId),
+        where("type", "==", "User")
       );
       const querySnapshot = await getDocs(favoritesQuery);
       return querySnapshot.size;
@@ -119,6 +121,7 @@ function Profile({ navigation }) {
       await signOut(auth);
       dispatch(setCurrentUser(null));
       dispatch(clearUserFavorites());
+      dispatch(clearFavorites());
       navigation.replace("Login");
     } catch (error) {
       Alert.alert("Fel vid utloggning", error.message);
@@ -146,6 +149,7 @@ function Profile({ navigation }) {
     const unsubscribe = navigation.addListener("focus", () => {
       if (auth.currentUser) {
         loadUserImages(auth.currentUser.uid);
+        loadFavoriteCount(auth.currentUser.uid).then(setFavoriteCount);
       }
     });
 

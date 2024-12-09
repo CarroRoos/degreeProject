@@ -107,26 +107,12 @@ export const removeFavorite = createAsyncThunk(
     try {
       if (!currentUserId) throw new Error("No user ID provided");
 
-      console.log("Removing favorite with params:", { currentUserId, salonId });
-
-      const favoritesQuery = query(
-        collection(db, "favorites"),
-        where("userId", "==", currentUserId),
-        where("favoriteId", "==", salonId),
-        where("type", "==", "Salon")
-      );
-
-      const querySnapshot = await getDocs(favoritesQuery);
-      console.log("Found documents to remove:", querySnapshot.size);
-
-      querySnapshot.forEach(async (doc) => {
-        console.log("Removing document:", doc.id);
-        await deleteDoc(doc.ref);
-      });
+      const docRef = doc(db, "favorites", `${currentUserId}-${salonId}`);
+      await deleteDoc(docRef);
 
       const localFavorites = await AsyncStorage.getItem("salonFavorites");
       let favorites = localFavorites ? JSON.parse(localFavorites) : [];
-      favorites = favorites.filter((fav) => fav.favoriteId !== salonId);
+      favorites = favorites.filter((fav) => fav.id !== salonId);
       await AsyncStorage.setItem("salonFavorites", JSON.stringify(favorites));
 
       return salonId;
@@ -158,6 +144,12 @@ const salonSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload;
       state.isLoading = false;
+    },
+    clearFavorites: (state) => {
+      state.favorites = [];
+      AsyncStorage.removeItem("salonFavorites").catch((error) =>
+        console.error("Error clearing salon favorites from storage:", error)
+      );
     },
   },
   extraReducers: (builder) => {
@@ -213,12 +205,9 @@ const salonSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(removeFavorite.fulfilled, (state, action) => {
-        console.log("Current favorites:", state.favorites);
-        console.log("Removing salonId:", action.payload);
         state.favorites = state.favorites.filter(
-          (fav) => (fav.id || fav.favoriteId || fav.objectID) !== action.payload
+          (fav) => fav.id !== action.payload
         );
-        console.log("Updated favorites:", state.favorites);
         state.isLoading = false;
         state.error = null;
       })
@@ -229,6 +218,7 @@ const salonSlice = createSlice({
   },
 });
 
-export const { setSalons, setFilteredSalons, setError } = salonSlice.actions;
+export const { setSalons, setFilteredSalons, setError, clearFavorites } =
+  salonSlice.actions;
 
 export default salonSlice.reducer;

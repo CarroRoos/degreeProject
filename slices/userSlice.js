@@ -88,19 +88,24 @@ export const addUserFavorite = createAsyncThunk(
         "favorites",
         `${currentUserId}-${favoriteUser.uid}`
       );
-      await setDoc(docRef, {
+
+      const favoriteData = {
         userId: currentUserId,
         favoriteId: favoriteUser.uid,
         type: "User",
-        ...favoriteUser,
-      });
+        displayName: favoriteUser.displayName || "",
+        photoURL: favoriteUser.photoURL || "",
+        location: favoriteUser.location || "",
+      };
+
+      await setDoc(docRef, favoriteData);
 
       const localFavorites = await AsyncStorage.getItem("userFavorites");
       const favorites = localFavorites ? JSON.parse(localFavorites) : [];
-      favorites.push(favoriteUser);
+      favorites.push(favoriteData);
       await AsyncStorage.setItem("userFavorites", JSON.stringify(favorites));
 
-      return favoriteUser;
+      return favoriteData;
     } catch (error) {
       console.error("Error adding user favorite:", error);
       throw error;
@@ -140,6 +145,24 @@ export const removeUserFavorite = createAsyncThunk(
   }
 );
 
+export const loadUserFavoriteCount = createAsyncThunk(
+  "users/loadUserFavoriteCount",
+  async (userId) => {
+    try {
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("favoriteId", "==", userId),
+        where("type", "==", "User")
+      );
+      const querySnapshot = await getDocs(favoritesQuery);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error("Error loading favorite count:", error);
+      return 0;
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "users",
   initialState: {
@@ -171,7 +194,6 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
       .addCase(loadLocalUserFavorites.pending, (state) => {
         state.isLoading = true;
       })
@@ -234,6 +256,19 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(removeUserFavorite.rejected, (state, action) => {
+        state.error = action.error.message;
+        state.isLoading = false;
+      })
+
+      .addCase(loadUserFavoriteCount.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadUserFavoriteCount.fulfilled, (state, action) => {
+        state.favoriteCounts[action.meta.arg] = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(loadUserFavoriteCount.rejected, (state, action) => {
         state.error = action.error.message;
         state.isLoading = false;
       });

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -6,16 +6,32 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ActivityIndicator,
+  FlatList,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { addFavorite, removeFavorite } from "./slices/salonSlice";
+import {
+  addFavorite,
+  removeFavorite,
+  loadFavorites,
+} from "./slices/salonSlice";
 import { auth } from "./config/firebase";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import FastImage from "react-native-fast-image";
 
 const SalonList = ({ data }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const favorites = useSelector((state) => state.salons.favorites || []);
+  const [loadingFavorites, setLoadingFavorites] = useState({});
+
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser && favorites.length === 0) {
+      dispatch(loadFavorites(currentUser.uid));
+    }
+  }, [dispatch, favorites]);
 
   const handleSalonPress = (salon) => {
     navigation.navigate("SalonDetail", { salon });
@@ -24,11 +40,11 @@ const SalonList = ({ data }) => {
   const isFavorite = (salon) => {
     const salonId = salon.objectID || salon.id;
     return favorites.some(
-      (fav) => (fav.objectID || fav.id || fav.favoriteId) === salonId
+      (fav) => fav.id === salonId || fav.objectID === salonId
     );
   };
 
-  const handleFavoritePress = (salon) => {
+  const handleFavoritePress = async (salon) => {
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
@@ -36,26 +52,32 @@ const SalonList = ({ data }) => {
       return;
     }
 
-    const salonId = salon.objectID || salon.id;
-    const salonWithId = { ...salon, id: salonId };
-    const isFavorited = isFavorite(salon);
+    try {
+      const salonId = salon.objectID || salon.id;
+      setLoadingFavorites((prev) => ({ ...prev, [salonId]: true }));
+      const isFavorited = isFavorite(salon);
 
-    if (isFavorited) {
-      console.log("Removing favorite:", salonId);
-      dispatch(
-        removeFavorite({
-          currentUserId: currentUser.uid,
-          salonId: salonId,
-        })
-      );
-    } else {
-      console.log("Adding favorite:", salonWithId);
-      dispatch(
-        addFavorite({
-          currentUserId: currentUser.uid,
-          salon: salonWithId,
-        })
-      );
+      if (isFavorited) {
+        await dispatch(
+          removeFavorite({
+            currentUserId: currentUser.uid,
+            salonId: salonId,
+          })
+        ).unwrap();
+      } else {
+        const salonWithId = { ...salon, id: salonId };
+        await dispatch(
+          addFavorite({
+            currentUserId: currentUser.uid,
+            salon: salonWithId,
+          })
+        ).unwrap();
+      }
+    } catch (error) {
+      console.error("Error handling favorite:", error);
+      Alert.alert("Fel", "Kunde inte uppdatera favorit");
+    } finally {
+      setLoadingFavorites((prev) => ({ ...prev, [salonId]: false }));
     }
   };
 
@@ -66,7 +88,7 @@ const SalonList = ({ data }) => {
     return "Kategorier ej angivna";
   };
 
-  const groupSalons = () => {
+  const groupedSalons = useMemo(() => {
     const sortedByTime = [...data].sort((a, b) =>
       (a.time || "").localeCompare(b.time || "")
     );
@@ -82,59 +104,66 @@ const SalonList = ({ data }) => {
       billigaste: sortedByPrice.slice(0, 3),
       narmaste: sortedByDistance.slice(0, 3),
     };
-  };
+  }, [data]);
 
-  const renderSalonCard = (salon) => (
-    <TouchableOpacity
-      key={salon.objectID || salon.id}
-      style={styles.salonCard}
-      onPress={() => handleSalonPress(salon)}
-    >
-      <View style={styles.contentContainer}>
-        <View style={styles.leftContent}>
-          {salon.image ? (
-            <Image source={{ uri: salon.image }} style={styles.salonImage} />
-          ) : (
-            <View style={[styles.salonImage, styles.placeholderImage]}>
-              <Text style={styles.placeholderText}>
-                {salon.salon?.charAt(0) || "S"}
+  const renderSalonCard = ({ item: salon }) => {
+    const salonId = salon.objectID || salon.id;
+    return (
+      <TouchableOpacity
+        key={salonId}
+        style={styles.salonCard}
+        onPress={() => handleSalonPress(salon)}
+      >
+        <View style={styles.contentContainer}>
+          <View style={styles.leftContent}>
+            {salon.image ? (
+              <FastImage
+                source={{ uri: salon.image }}
+                style={styles.salonImage}
+                resizeMode={FastImage.resizeMode.cover}
+              />
+            ) : (
+              <View style={[styles.salonImage, styles.placeholderImage]}>
+                <Text style={styles.placeholderText}>
+                  {salon.salon?.charAt(0) || "S"}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.salonInfo}>
+              <Text style={styles.salonName}>
+                {salon.salon || "Okänd salong"}
+              </Text>
+              <Text style={styles.location}>
+                {salon.time ? `Kl. ${salon.time}` : "Tid ej angiven"} •{" "}
+                {salon.price ? `${salon.price} kr` : "Pris ej angivet"}
+              </Text>
+              <Text style={styles.categories}>
+                {salon.distance ? `${salon.distance} km • ` : ""}
+                {getTreatmentText(salon)}
               </Text>
             </View>
-          )}
-
-          <View style={styles.salonInfo}>
-            <Text style={styles.salonName}>
-              {salon.salon || "Okänd salong"}
-            </Text>
-            <Text style={styles.location}>
-              {salon.time ? `Kl. ${salon.time}` : "Tid ej angiven"} •{" "}
-              {salon.price ? `${salon.price} kr` : "Pris ej angivet"}
-            </Text>
-            <Text style={styles.categories}>
-              {salon.distance ? `${salon.distance} km • ` : ""}
-              {getTreatmentText(salon)}
-            </Text>
           </View>
-        </View>
 
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={() => handleFavoritePress(salon)}
-        >
-          <Text
-            style={[
-              styles.favoriteIcon,
-              isFavorite(salon) && styles.favoriteIconActive,
-            ]}
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={() => handleFavoritePress(salon)}
+            disabled={loadingFavorites[salonId]}
           >
-            {isFavorite(salon) ? "♥" : "♡"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const groupedSalons = groupSalons();
+            {loadingFavorites[salonId] ? (
+              <ActivityIndicator size="small" color="#9747FF" />
+            ) : (
+              <Icon
+                name={isFavorite(salon) ? "favorite" : "favorite-border"}
+                size={24}
+                color={isFavorite(salon) ? "#9747FF" : "#666"}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -142,17 +171,29 @@ const SalonList = ({ data }) => {
         <>
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>Tidigaste</Text>
-            {groupedSalons.tidigaste.map(renderSalonCard)}
+            <FlatList
+              data={groupedSalons.tidigaste}
+              renderItem={renderSalonCard}
+              keyExtractor={(item) => item.objectID || item.id}
+            />
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>Billigaste</Text>
-            {groupedSalons.billigaste.map(renderSalonCard)}
+            <FlatList
+              data={groupedSalons.billigaste}
+              renderItem={renderSalonCard}
+              keyExtractor={(item) => item.objectID || item.id}
+            />
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>Närmaste</Text>
-            {groupedSalons.narmaste.map(renderSalonCard)}
+            <FlatList
+              data={groupedSalons.narmaste}
+              renderItem={renderSalonCard}
+              keyExtractor={(item) => item.objectID || item.id}
+            />
           </View>
         </>
       ) : (
@@ -232,13 +273,10 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     padding: 8,
-  },
-  favoriteIcon: {
-    fontSize: 24,
-    color: "#666",
-  },
-  favoriteIconActive: {
-    color: "#9747FF",
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyContainer: {
     alignItems: "center",

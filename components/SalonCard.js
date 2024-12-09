@@ -1,19 +1,66 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addFavorite, removeFavorite } from "../slices/salonSlice";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import {
+  addFavorite,
+  removeFavorite,
+  loadFavorites,
+} from "../slices/salonSlice";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { auth } from "../config/firebase";
 
 function SalonCard({ salon, navigation }) {
   const dispatch = useDispatch();
-  const favorites = useSelector((state) => state.salons.favorites || []);
+  const favorites = useSelector((state) => state.salons.favorites);
+  const isLoading = useSelector((state) => state.salons.isLoading);
+
   const isFavorite = favorites.some((fav) => fav.id === salon.id);
 
-  const toggleFavorite = () => {
-    if (isFavorite) {
-      dispatch(removeFavorite(salon.id));
-    } else {
-      dispatch(addFavorite(salon));
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      dispatch(loadFavorites(currentUser.uid));
+    }
+  }, [dispatch]);
+
+  const toggleFavorite = async () => {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      Alert.alert("Error", "Du måste vara inloggad för att favoritmarkera");
+      return;
+    }
+
+    if (isLoading) return;
+
+    try {
+      if (isFavorite) {
+        await dispatch(
+          removeFavorite({
+            currentUserId: currentUser.uid,
+            salonId: salon.id,
+          })
+        );
+      } else {
+        await dispatch(
+          addFavorite({
+            currentUserId: currentUser.uid,
+            salon: {
+              ...salon,
+              id: salon.id || `salon-${Date.now()}`,
+            },
+          })
+        );
+      }
+    } catch (error) {
+      Alert.alert("Error", "Det gick inte att uppdatera favoriter");
     }
   };
 
@@ -63,12 +110,16 @@ function SalonCard({ salon, navigation }) {
         </Text>
       </View>
 
-      {/* Hjärtikon */}
-      <TouchableOpacity onPress={toggleFavorite} style={styles.favoriteButton}>
+      <TouchableOpacity
+        onPress={toggleFavorite}
+        style={styles.favoriteButton}
+        disabled={isLoading}
+      >
         <Icon
           name={isFavorite ? "heart" : "heart-outline"}
           size={24}
           color={isFavorite ? "#9E38EE" : "#777"}
+          style={isFavorite ? styles.activeFavorite : null}
         />
       </TouchableOpacity>
     </View>
@@ -146,6 +197,12 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     padding: 10,
+  },
+  activeFavorite: {
+    color: "#9E38EE",
+    textShadowColor: "rgba(158, 56, 238, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

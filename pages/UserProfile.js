@@ -10,7 +10,11 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { addUserFavorite, removeUserFavorite } from "../slices/userSlice";
+import {
+  addUserFavorite,
+  removeUserFavorite,
+  loadUserFavoriteCount,
+} from "../slices/userSlice";
 import Footer from "../components/Footer";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { auth, storage, db } from "../config/firebase";
@@ -98,8 +102,9 @@ function UserProfile({ route, navigation }) {
     if (userId) {
       loadUserData(userId);
       loadUserImages(userId);
+      dispatch(loadUserFavoriteCount(userId));
     }
-  }, [userId]);
+  }, [userId, dispatch]);
 
   return (
     <View style={styles.container}>
