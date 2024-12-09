@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useDispatch } from "react-redux";
+import { loadFavorites } from "./slices/salonSlice";
+import { auth } from "./config/firebase";
 import Home from "./pages/Home";
 import Favorites from "./pages/Favorites";
 import Bookings from "./pages/Bookings";
@@ -16,7 +19,19 @@ import EditProfile from "./pages/EditProfile";
 
 const Stack = createStackNavigator();
 
-export default function AppNavigator() {
+function AppNavigator() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        dispatch(loadFavorites(user.uid));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [dispatch]);
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -42,3 +57,5 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+export default AppNavigator;

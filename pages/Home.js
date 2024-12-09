@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -55,19 +55,18 @@ function Home({ navigation }) {
 
   useEffect(() => {
     const getUserLocation = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Platsbehörighet nekades.");
-        return;
-      }
-
       try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          console.log("Platsbehörighet nekades.");
+          return;
+        }
+
         let location = await Location.getCurrentPositionAsync({});
         setUserLocation({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         });
-        console.log("Användarens plats inställd:", location.coords);
       } catch (error) {
         console.error("Kunde inte hämta plats:", error);
       }
@@ -76,45 +75,54 @@ function Home({ navigation }) {
     getUserLocation();
   }, []);
 
-  const handleSearch = async (query) => {
-    setSearchQuery(query);
+  const handleSearch = useCallback(
+    async (query) => {
+      setSearchQuery(query);
+      if (!query.trim()) {
+        dispatch(setFilteredSalons([]));
+        dispatch(setUsers([]));
+        return;
+      }
 
-    const searchOptions = userLocation
-      ? {
+      setLoading(true);
+      try {
+        const searchOptions = userLocation
+          ? {
+              query,
+              aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
+              aroundRadius: 20000,
+            }
+          : { query };
+
+        const { salongerResults, usersResults } = await algoliaSearch.search(
           query,
-          aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
-          aroundRadius: 20000,
-        }
-      : { query };
+          searchOptions
+        );
 
-    setLoading(true);
-    try {
-      const { salongerResults, usersResults } = await algoliaSearch.search(
-        query,
-        searchOptions
-      );
-      console.log("Resultat från Algolia - Salonger:", salongerResults);
-      console.log("Resultat från Algolia - Users:", usersResults);
+        dispatch(setFilteredSalons(salongerResults));
+        dispatch(setUsers(usersResults));
+      } catch (error) {
+        console.error("Sökning misslyckades:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dispatch, userLocation]
+  );
 
-      dispatch(setFilteredSalons(salongerResults));
-      dispatch(setUsers(usersResults));
-    } catch (error) {
-      console.error("Sökning misslyckades:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFilter = (filterType) => {
-    setCurrentFilter(filterType);
-    if (filterType === "forYou") {
-      dispatch(resetFilter());
-      dispatch(resetUsers());
-    } else {
-      dispatch(filterSalons(filterType));
-      dispatch(filterUsers(filterType));
-    }
-  };
+  const handleFilter = useCallback(
+    (filterType) => {
+      setCurrentFilter(filterType);
+      if (filterType === "forYou") {
+        dispatch(resetFilter());
+        dispatch(resetUsers());
+      } else {
+        dispatch(filterSalons(filterType));
+        dispatch(filterUsers(filterType));
+      }
+    },
+    [dispatch]
+  );
 
   const salonSortOptions = [
     { label: "För dig", value: "forYou" },
@@ -122,7 +130,7 @@ function Home({ navigation }) {
     { label: "Klippning", value: "haircut" },
   ];
 
-  const renderContent = () => {
+  const ListHeaderComponent = useCallback(() => {
     if (loading) {
       return <Text style={styles.loadingText}>Laddar resultat...</Text>;
     }
@@ -131,23 +139,29 @@ function Home({ navigation }) {
       return <Text style={styles.heartIcon}>💜</Text>;
     }
 
+    return null;
+  }, [loading, searchQuery]);
+
+  const renderItem = useCallback(() => {
+    if (!searchQuery.trim() || loading) return null;
+
     return (
-      <>
+      <View>
         {filteredList?.length > 0 && (
-          <>
+          <View>
             <Text style={styles.resultHeader}>Frisörer</Text>
             <SalonList data={filteredList} navigation={navigation} />
-          </>
+          </View>
         )}
         {filteredUsers?.length > 0 && (
-          <>
+          <View>
             <Text style={styles.resultHeader}>Användare</Text>
             <UserList data={filteredUsers} navigation={navigation} />
-          </>
+          </View>
         )}
-      </>
+      </View>
     );
-  };
+  }, [searchQuery, loading, filteredList, filteredUsers, navigation]);
 
   return (
     <View style={styles.container}>
@@ -195,10 +209,14 @@ function Home({ navigation }) {
       )}
 
       <FlatList
-        data={[]}
-        ListHeaderComponent={renderContent}
-        keyExtractor={(item, index) => index.toString()}
+        data={[{ key: "content" }]}
+        renderItem={renderItem}
+        ListHeaderComponent={ListHeaderComponent}
+        ListFooterComponent={<View style={{ height: 150 }} />}
+        keyExtractor={(item) => item.key}
         style={styles.resultSection}
+        scrollEnabled={true}
+        removeClippedSubviews={true}
       />
 
       <Footer favoritesCount={favoritesCount} />
@@ -255,7 +273,6 @@ const styles = StyleSheet.create({
   },
   resultSection: {
     flex: 1,
-    marginBottom: 150,
   },
   resultHeader: {
     fontSize: 20,
@@ -264,6 +281,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: "#F4F4F4",
     padding: 10,
+    marginHorizontal: 16,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

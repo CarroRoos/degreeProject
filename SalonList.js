@@ -1,13 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
-  Alert,
   ActivityIndicator,
-  FlatList,
+  Alert,
+  SectionList,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,100 +19,19 @@ import { auth } from "./config/firebase";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import FastImage from "react-native-fast-image";
 
-const SalonList = ({ data }) => {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const favorites = useSelector((state) => state.salons.favorites || []);
-  const [loadingFavorites, setLoadingFavorites] = useState({});
+const SalonCard = React.memo(
+  ({ salon, onPress, onFavoritePress, isFavorited, isLoading }) => {
+    const getTreatmentText = useCallback((salon) => {
+      if (!salon.treatment) return "Kategorier ej angivna";
+      if (Array.isArray(salon.treatment)) return salon.treatment.join(", ");
+      if (typeof salon.treatment === "string") return salon.treatment;
+      return "Kategorier ej angivna";
+    }, []);
 
-  useEffect(() => {
-    const currentUser = auth.currentUser;
-    if (currentUser && favorites.length === 0) {
-      dispatch(loadFavorites(currentUser.uid));
-    }
-  }, [dispatch, favorites]);
+    if (!salon) return null;
 
-  const handleSalonPress = (salon) => {
-    navigation.navigate("SalonDetail", { salon });
-  };
-
-  const isFavorite = (salon) => {
-    const salonId = salon.objectID || salon.id;
-    return favorites.some(
-      (fav) => fav.id === salonId || fav.objectID === salonId
-    );
-  };
-
-  const handleFavoritePress = async (salon) => {
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      Alert.alert("Error", "Du måste vara inloggad för att favoritmarkera");
-      return;
-    }
-
-    try {
-      const salonId = salon.objectID || salon.id;
-      setLoadingFavorites((prev) => ({ ...prev, [salonId]: true }));
-      const isFavorited = isFavorite(salon);
-
-      if (isFavorited) {
-        await dispatch(
-          removeFavorite({
-            currentUserId: currentUser.uid,
-            salonId: salonId,
-          })
-        ).unwrap();
-      } else {
-        const salonWithId = { ...salon, id: salonId };
-        await dispatch(
-          addFavorite({
-            currentUserId: currentUser.uid,
-            salon: salonWithId,
-          })
-        ).unwrap();
-      }
-    } catch (error) {
-      console.error("Error handling favorite:", error);
-      Alert.alert("Fel", "Kunde inte uppdatera favorit");
-    } finally {
-      setLoadingFavorites((prev) => ({ ...prev, [salonId]: false }));
-    }
-  };
-
-  const getTreatmentText = (salon) => {
-    if (!salon.treatment) return "Kategorier ej angivna";
-    if (Array.isArray(salon.treatment)) return salon.treatment.join(", ");
-    if (typeof salon.treatment === "string") return salon.treatment;
-    return "Kategorier ej angivna";
-  };
-
-  const groupedSalons = useMemo(() => {
-    const sortedByTime = [...data].sort((a, b) =>
-      (a.time || "").localeCompare(b.time || "")
-    );
-    const sortedByPrice = [...data].sort(
-      (a, b) => (a.price || 0) - (b.price || 0)
-    );
-    const sortedByDistance = [...data].sort(
-      (a, b) => (a.distance || 0) - (b.distance || 0)
-    );
-
-    return {
-      tidigaste: sortedByTime.slice(0, 3),
-      billigaste: sortedByPrice.slice(0, 3),
-      narmaste: sortedByDistance.slice(0, 3),
-    };
-  }, [data]);
-
-  const renderSalonCard = ({ item: salon }) => {
-    const salonId = salon.objectID || salon.id;
     return (
-      <TouchableOpacity
-        key={salonId}
-        style={styles.salonCard}
-        onPress={() => handleSalonPress(salon)}
-      >
+      <TouchableOpacity style={styles.salonCard} onPress={() => onPress(salon)}>
         <View style={styles.contentContainer}>
           <View style={styles.leftContent}>
             {salon.image ? (
@@ -147,76 +65,192 @@ const SalonList = ({ data }) => {
 
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={() => handleFavoritePress(salon)}
-            disabled={loadingFavorites[salonId]}
+            onPress={() => onFavoritePress(salon)}
+            disabled={isLoading}
           >
-            {loadingFavorites[salonId] ? (
+            {isLoading ? (
               <ActivityIndicator size="small" color="#9747FF" />
             ) : (
               <Icon
-                name={isFavorite(salon) ? "favorite" : "favorite-border"}
+                name={isFavorited ? "favorite" : "favorite-border"}
                 size={24}
-                color={isFavorite(salon) ? "#9747FF" : "#666"}
+                color={isFavorited ? "#9747FF" : "#666"}
               />
             )}
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
-  };
+  }
+);
+
+const SalonList = ({ data }) => {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const favorites = useSelector((state) => state.salons.favorites || []);
+  const [loadingFavorites, setLoadingFavorites] = useState({});
+
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser && favorites.length === 0) {
+      dispatch(loadFavorites(currentUser.uid));
+    }
+  }, [dispatch, favorites]);
+
+  const handleSalonPress = useCallback(
+    (salon) => {
+      if (!salon) return;
+      navigation.navigate("SalonDetail", { salon });
+    },
+    [navigation]
+  );
+
+  const isFavorite = useCallback(
+    (salon) => {
+      if (!salon || (!salon.objectID && !salon.id)) return false;
+
+      const salonId = salon.objectID || salon.id;
+      return favorites.some(
+        (fav) => fav.id === salonId || fav.objectID === salonId
+      );
+    },
+    [favorites]
+  );
+
+  const handleFavoritePress = useCallback(
+    async (salon) => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        Alert.alert("Error", "Du måste vara inloggad för att favoritmarkera");
+        return;
+      }
+
+      if (!salon || (!salon.objectID && !salon.id)) {
+        console.error("Invalid salon data:", salon);
+        Alert.alert("Fel", "Kunde inte hantera favorit: Ogiltig salongsdata");
+        return;
+      }
+
+      const salonId = salon.objectID || salon.id;
+
+      try {
+        setLoadingFavorites((prev) => ({ ...prev, [salonId]: true }));
+
+        if (isFavorite(salon)) {
+          await dispatch(
+            removeFavorite({
+              currentUserId: currentUser.uid,
+              salonId: salonId,
+            })
+          ).unwrap();
+        } else {
+          const salonWithId = { ...salon, id: salonId };
+          await dispatch(
+            addFavorite({
+              currentUserId: currentUser.uid,
+              salon: salonWithId,
+            })
+          ).unwrap();
+        }
+      } catch (error) {
+        console.error("Error handling favorite:", error);
+        Alert.alert("Fel", "Kunde inte uppdatera favorit");
+      } finally {
+        setLoadingFavorites((prev) => ({ ...prev, [salonId]: false }));
+      }
+    },
+    [dispatch, isFavorite]
+  );
+
+  const sections = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) return [];
+
+    const validData = data.filter(
+      (salon) => salon && (salon.objectID || salon.id)
+    );
+
+    const sortedByTime = [...validData].sort((a, b) =>
+      (a.time || "").localeCompare(b.time || "")
+    );
+    const sortedByPrice = [...validData].sort(
+      (a, b) => (a.price || 0) - (b.price || 0)
+    );
+    const sortedByDistance = [...validData].sort(
+      (a, b) => (a.distance || 0) - (b.distance || 0)
+    );
+
+    return [
+      { title: "Tidigaste", data: sortedByTime.slice(0, 3) },
+      { title: "Billigaste", data: sortedByPrice.slice(0, 3) },
+      { title: "Närmaste", data: sortedByDistance.slice(0, 3) },
+    ];
+  }, [data]);
+
+  const renderItem = useCallback(
+    ({ item: salon }) => {
+      if (!salon || (!salon.objectID && !salon.id)) return null;
+
+      return (
+        <SalonCard
+          salon={salon}
+          onPress={handleSalonPress}
+          onFavoritePress={handleFavoritePress}
+          isFavorited={isFavorite(salon)}
+          isLoading={loadingFavorites[salon.objectID || salon.id]}
+        />
+      );
+    },
+    [handleSalonPress, handleFavoritePress, isFavorite, loadingFavorites]
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section: { title } }) => (
+      <Text style={styles.sectionHeader}>{title}</Text>
+    ),
+    []
+  );
+
+  const keyExtractor = useCallback((item) => {
+    return item?.objectID || item?.id || String(Math.random());
+  }, []);
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>Inga resultat hittades</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {data.length > 0 ? (
-        <>
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Tidigaste</Text>
-            <FlatList
-              data={groupedSalons.tidigaste}
-              renderItem={renderSalonCard}
-              keyExtractor={(item) => item.objectID || item.id}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Billigaste</Text>
-            <FlatList
-              data={groupedSalons.billigaste}
-              renderItem={renderSalonCard}
-              keyExtractor={(item) => item.objectID || item.id}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>Närmaste</Text>
-            <FlatList
-              data={groupedSalons.narmaste}
-              renderItem={renderSalonCard}
-              keyExtractor={(item) => item.objectID || item.id}
-            />
-          </View>
-        </>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Inga resultat hittades</Text>
-        </View>
-      )}
+      <SectionList
+        sections={sections}
+        renderItem={renderItem}
+        renderSectionHeader={renderSectionHeader}
+        keyExtractor={keyExtractor}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews={true}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 16,
-  },
-  section: {
-    marginBottom: 24,
   },
   sectionHeader: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#9747FF",
     marginBottom: 12,
+    marginTop: 12,
   },
   salonCard: {
     backgroundColor: "white",
@@ -290,4 +324,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SalonList;
+export default React.memo(SalonList);
