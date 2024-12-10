@@ -187,9 +187,7 @@ function Profile({ navigation }) {
             <>
               <View style={styles.profileSection}>
                 <Image
-                  source={{
-                    uri: user?.photoURL || defaultAvatar,
-                  }}
+                  source={{ uri: user?.photoURL || defaultAvatar }}
                   style={styles.profileImage}
                 />
                 <View style={styles.nameContainer}>
@@ -222,6 +220,34 @@ function Profile({ navigation }) {
                   <Text style={styles.logoutButtonText}>Logga ut</Text>
                 </TouchableOpacity>
               </View>
+
+              <View style={styles.scissorsContainer}>
+                <Image
+                  source={require("../assets/icons/scissors2.png")}
+                  style={[styles.scissorIcon, { tintColor: "#9E38EE" }]}
+                />
+                <Image
+                  source={require("../assets/icons/nail-polish.png")}
+                  style={[styles.scissorIcon, { tintColor: "#000" }]}
+                />
+                <Image
+                  source={require("../assets/icons/spa_.png")}
+                  style={[styles.scissorIcon, { tintColor: "#000" }]}
+                />
+                <Image
+                  source={require("../assets/icons/makeup_.png")}
+                  style={[styles.scissorIcon, { tintColor: "#000" }]}
+                />
+              </View>
+            </>
+          }
+          ListFooterComponent={
+            <>
+              {gallery.length === 0 && (
+                <Text style={styles.emptyText}>
+                  Inga bilder uppladdade än 💜
+                </Text>
+              )}
               <TouchableOpacity
                 style={styles.stylistButton}
                 onPress={() =>
@@ -240,12 +266,8 @@ function Profile({ navigation }) {
             </>
           }
           contentContainerStyle={styles.flatListContent}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Inga bilder uppladdade än 💜</Text>
-          }
         />
       )}
-
       <Footer />
     </View>
   );
@@ -280,6 +302,7 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     paddingTop: 120,
+    paddingBottom: 100,
   },
   profileSection: {
     alignItems: "center",
@@ -356,7 +379,6 @@ const styles = StyleSheet.create({
     marginTop: 30,
     width: 40,
     height: 40,
-    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
   imageWrapper: {
     flex: 1 / 3,
@@ -396,9 +418,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 20,
     marginTop: 20,
-    marginBottom: 100,
+    marginBottom: 200,
     alignItems: "center",
-    zIndex: 1,
   },
   stylistButtonText: {
     color: "#fff",
