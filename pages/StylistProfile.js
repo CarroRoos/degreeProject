@@ -32,9 +32,11 @@ function StylistProfile({ route, navigation }) {
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
+    "https://via.placeholder.com/150",
   ];
 
   const customerGallery = [
+    "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
@@ -102,12 +104,14 @@ function StylistProfile({ route, navigation }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Image
-          source={{ uri: "https://via.placeholder.com/500x200" }}
+          source={{
+            uri: stylist.image || "https://via.placeholder.com/500x200",
+          }}
           style={styles.placeholderImage}
         />
-
         <View style={styles.header}>
           <Text style={styles.stylistInfo}>
+            <Text style={styles.stylistName}>{stylist.name} </Text>
             hos {stylist.salon} ⭐ {stylist.ratings} - recensioner
           </Text>
         </View>
@@ -115,8 +119,10 @@ function StylistProfile({ route, navigation }) {
         <View style={styles.bookingSection}>
           <View style={styles.bookingInfo}>
             <Text style={styles.bookingDate}>Idag</Text>
-            <Text style={styles.bookingTime}>14:30</Text>
-            <Text style={styles.bookingPrice}>1200 kr</Text>
+            <Text style={styles.bookingTime}>{stylist.time || "14:30"}</Text>
+            <Text style={styles.bookingPrice}>
+              {stylist.price || "1200"} kr
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.bookingButton}
@@ -134,14 +140,12 @@ function StylistProfile({ route, navigation }) {
                 style={styles.heartButton}
                 onPress={toggleFavorite}
               >
-                <View style={styles.heartContainer}>
-                  <MaterialCommunityIcons
-                    name={isFavorite ? "heart" : "heart-outline"}
-                    size={40}
-                    color={isFavorite ? "#9E38EE" : "#777"}
-                  />
-                  <Text style={styles.favoriteCount}>{favoriteCount}</Text>
-                </View>
+                <MaterialCommunityIcons
+                  name={isFavorite ? "heart" : "heart-outline"}
+                  size={40}
+                  color={isFavorite ? "#9E38EE" : "#777"}
+                />
+                <Text style={styles.favoriteCount}>{favoriteCount}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -149,6 +153,35 @@ function StylistProfile({ route, navigation }) {
             15 års erfarenhet{"\n"}Innehar gesällbrev, mästarbrev{"\n"}
             Utbildning i Hairtalk{"\n"}Salong: {stylist.salon}
           </Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Fler tider</Text>
+        <View style={styles.timeSection}>
+          <Text style={styles.timeText}>17:00</Text>
+          <Text style={styles.timePrice}>{stylist.price || "1200"} kr</Text>
+          <TouchableOpacity
+            style={styles.bookingButton}
+            onPress={handleBooking}
+          >
+            <Text style={styles.bookingButtonText}>Boka</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.timeSection}>
+          <Text style={styles.timeText}>18:30</Text>
+          <Text style={styles.timePrice}>{stylist.price || "1200"} kr</Text>
+          <TouchableOpacity
+            style={styles.bookingButton}
+            onPress={handleBooking}
+          >
+            <Text style={styles.bookingButtonText}>Boka</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionTitle}>Plats:</Text>
+        <Text style={styles.placeText}>Karlaplan 12, {stylist.distance} m</Text>
+        <View style={styles.mapPlaceholder}>
+          <Text>Karta här</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Utvalda hårbilder</Text>
@@ -180,6 +213,21 @@ function StylistProfile({ route, navigation }) {
         >
           <Text style={styles.customerButtonText}>Till Amira</Text>
         </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Behandling hemma hos dig</Text>
+        <View style={styles.timeSection}>
+          <Text style={styles.timeText}>20:00</Text>
+          <Text style={styles.timePrice}>2500 kr</Text>
+          <TouchableOpacity style={styles.requestButton}>
+            <Text style={styles.requestButtonText}>Förfrågan</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionTitle}>Låt frisören komma hem till dig</Text>
+        <Text style={styles.homeServiceText}>
+          Om det är enklast att genomföra det hemma hos dig, då ordnar vi det.
+          Priset gäller klipp, färg och styling.
+        </Text>
       </ScrollView>
       <Footer />
     </View>
@@ -206,6 +254,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
     position: "relative",
+  },
+  stylistName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
   },
   stylistInfo: {
     color: "#333",
@@ -289,10 +342,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  heartContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   favoriteCount: {
     fontSize: 16,
     color: "#666",
@@ -310,24 +359,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontWeight: "bold",
     color: "#000",
-  },
-  galleryImage: {
-    width: 100,
-    height: 100,
-    margin: 5,
-    borderRadius: 10,
-  },
-  customerButton: {
-    backgroundColor: "#9E38EE",
-    padding: 10,
-    marginHorizontal: 20,
-    marginTop: 10,
-    borderRadius: 8,
-  },
-  customerButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
   },
   timeSection: {
     flexDirection: "row",
@@ -348,6 +379,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     fontWeight: "600",
+  },
+  galleryImage: {
+    width: 100,
+    height: 100,
+    margin: 5,
+    borderRadius: 10,
+  },
+  customerButton: {
+    backgroundColor: "#9E38EE",
+    padding: 10,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 8,
+  },
+  customerButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   requestButton: {
     backgroundColor: "#C190FF",

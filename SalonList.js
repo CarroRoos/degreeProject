@@ -100,7 +100,21 @@ const SalonList = ({ data }) => {
   const handleSalonPress = useCallback(
     (salon) => {
       if (!salon) return;
-      navigation.navigate("SalonDetail", { salon });
+
+      const stylistData = {
+        id: salon.objectID || salon.id,
+        name: salon.stylist,
+        salon: salon.salon,
+        ratings: salon.ratings || "0",
+        image: salon.image,
+        price: salon.price,
+        time: salon.time,
+        treatment: salon.treatment,
+        distance: salon.distance || "",
+        description: salon.description || "",
+      };
+
+      navigation.navigate("StylistProfile", { stylist: stylistData });
     },
     [navigation]
   );
