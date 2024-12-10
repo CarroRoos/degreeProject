@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   FlatList,
   ScrollView,
+  Alert,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import Footer from "../components/Footer";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { db, auth } from "../config/firebase";
@@ -20,13 +22,21 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
+import {
+  addFavorite,
+  removeFavorite,
+  loadFavorites,
+} from "../slices/salonSlice";
 
 function StylistProfile({ route, navigation }) {
   const { stylist } = route.params;
+  const dispatch = useDispatch();
   const currentUserId = auth.currentUser?.uid;
+  const favorites = useSelector((state) => state.salons.favorites || []);
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const gallery = [
     "https://via.placeholder.com/150",
@@ -42,15 +52,13 @@ function StylistProfile({ route, navigation }) {
 
   useEffect(() => {
     const loadFavoriteData = async () => {
+      if (!currentUserId) return;
+
       try {
-        const favoriteQuery = query(
-          collection(db, "favorites"),
-          where("userId", "==", currentUserId),
-          where("favoriteId", "==", stylist.id),
-          where("type", "==", "Salon")
+        const isAlreadyFavorite = favorites.some(
+          (fav) => fav.id === stylist.id || fav.objectID === stylist.id
         );
-        const favoriteSnapshot = await getDocs(favoriteQuery);
-        setIsFavorite(!favoriteSnapshot.empty);
+        setIsFavorite(isAlreadyFavorite);
 
         const countQuery = query(
           collection(db, "favorites"),
@@ -65,16 +73,52 @@ function StylistProfile({ route, navigation }) {
     };
 
     loadFavoriteData();
-  }, [currentUserId, stylist.id]);
+  }, [currentUserId, stylist.id, favorites]);
 
   const toggleFavorite = async () => {
+    if (!currentUserId) {
+      Alert.alert("Error", "Du måste vara inloggad för att favoritmarkera");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const docRef = doc(db, "favorites", `${currentUserId}-${stylist.id}`);
       if (isFavorite) {
+        await dispatch(
+          removeFavorite({
+            currentUserId: currentUserId,
+            salonId: stylist.id,
+          })
+        ).unwrap();
+
+        const docRef = doc(db, "favorites", `${currentUserId}-${stylist.id}`);
         await deleteDoc(docRef);
+
         setIsFavorite(false);
         setFavoriteCount((prev) => Math.max(prev - 1, 0));
       } else {
+        const salonData = {
+          id: stylist.id,
+          objectID: stylist.id,
+          stylist: stylist.name,
+          salon: stylist.salon,
+          type: "Salon",
+          image: stylist.image,
+          rating: stylist.ratings,
+          treatment: stylist.treatment,
+          distance: stylist.distance,
+          price: stylist.price,
+          time: stylist.time,
+        };
+
+        await dispatch(
+          addFavorite({
+            currentUserId: currentUserId,
+            salon: salonData,
+          })
+        ).unwrap();
+
+        const docRef = doc(db, "favorites", `${currentUserId}-${stylist.id}`);
         await setDoc(docRef, {
           userId: currentUserId,
           favoriteId: stylist.id,
@@ -86,12 +130,17 @@ function StylistProfile({ route, navigation }) {
           treatment: stylist.treatment,
           distance: stylist.distance,
           price: stylist.price,
+          time: stylist.time,
         });
+
         setIsFavorite(true);
         setFavoriteCount((prev) => prev + 1);
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
+      Alert.alert("Error", "Kunde inte uppdatera favorit");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -151,6 +200,7 @@ function StylistProfile({ route, navigation }) {
               <TouchableOpacity
                 style={styles.heartButton}
                 onPress={toggleFavorite}
+                disabled={isLoading}
               >
                 <MaterialCommunityIcons
                   name={isFavorite ? "heart" : "heart-outline"}
