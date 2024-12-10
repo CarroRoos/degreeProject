@@ -18,12 +18,15 @@ function BookingConfirmation({ navigation, route }) {
   const handleAddToCalendar = () => {
     const newBooking = {
       id: Date.now(),
-      stylist: stylist.name || "Okänd stylist",
-      treatment: "Klippning",
+      stylist: stylist.name,
+      treatment: stylist.treatment || "Klippning",
+      price: stylist.price || "Pris ej angivet",
       ratings: stylist.ratings || 0,
-      reviews: stylist.reviews || 0,
-      distance: "300 m", // Exempeldata
-      image: "https://via.placeholder.com/300x150",
+      salon: stylist.salon || "Okänd salong",
+      time: bookingTime,
+      date: bookingDate,
+      distance: stylist.distance || "300 m",
+      image: stylist.image || "https://via.placeholder.com/300x150",
     };
 
     dispatch(addBooking(newBooking));
@@ -39,7 +42,6 @@ function BookingConfirmation({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      {/* Tillbaka-knapp */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -47,18 +49,22 @@ function BookingConfirmation({ navigation, route }) {
         <MaterialCommunityIcons name="chevron-left" size={30} color="#000" />
       </TouchableOpacity>
 
-      {/* Ikon för framgång */}
       <View style={styles.iconContainer}>
         <MaterialCommunityIcons name="check-circle" size={70} color="#9E38EE" />
       </View>
 
-      {/* Rubrik och undertext */}
       <Text style={styles.heading}>Bokning klar!</Text>
       <Text style={styles.subheading}>
         Vi ses kl {bookingTime} {bookingDate}
       </Text>
 
-      {/* Karta */}
+      <Text style={styles.bookingDetails}>
+        {stylist.treatment || "Klippning"} - {stylist.price || ""}kr
+      </Text>
+      <Text style={styles.bookingDetails}>
+        {stylist.name} på {stylist.salon}
+      </Text>
+
       <View style={styles.mapContainer}>
         <Image
           source={{ uri: "https://via.placeholder.com/300x150" }}
@@ -66,7 +72,6 @@ function BookingConfirmation({ navigation, route }) {
         />
       </View>
 
-      {/* Knappar */}
       <TouchableOpacity
         style={styles.calendarButton}
         onPress={handleAddToCalendar}
@@ -81,14 +86,11 @@ function BookingConfirmation({ navigation, route }) {
         <Text style={styles.closeButtonText}>Stäng</Text>
       </TouchableOpacity>
 
-      {/* Footer */}
       <Footer />
       <Toast />
     </View>
   );
 }
-
-export default BookingConfirmation;
 
 const styles = StyleSheet.create({
   container: {
@@ -109,22 +111,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   heading: {
-    fontSize: 24,
+    fontSize: 34,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 30,
     color: "#000",
   },
   subheading: {
-    fontSize: 16,
+    fontSize: 20,
     color: "#555",
-    marginBottom: 20,
+    marginBottom: 10,
+  },
+  bookingDetails: {
+    fontSize: 18,
+    color: "#555",
+    marginBottom: 5,
   },
   mapContainer: {
     width: "90%",
     height: 150,
     borderRadius: 10,
     overflow: "hidden",
-    marginBottom: 30,
+    marginVertical: 30,
   },
   mapImage: {
     width: "100%",
@@ -157,3 +164,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+export default BookingConfirmation;

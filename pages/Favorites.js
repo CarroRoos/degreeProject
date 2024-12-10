@@ -96,7 +96,19 @@ function Favorites() {
 
   const handleCardPress = (item) => {
     if (item.type === "Salon") {
-      navigation.navigate("StylistProfile", { stylist: item });
+      navigation.navigate("StylistProfile", {
+        stylist: {
+          id: item.favoriteId,
+          name: item.stylist,
+          salon: item.salon,
+          time: item.time,
+          treatment: item.treatment,
+          price: item.price,
+          rating: item.ratings,
+          image: item.image,
+          distance: item.distance,
+        },
+      });
     } else {
       navigation.navigate("UserProfile", { userId: item.favoriteId });
     }

@@ -32,11 +32,9 @@ function StylistProfile({ route, navigation }) {
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
   ];
 
   const customerGallery = [
-    "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
@@ -83,6 +81,8 @@ function StylistProfile({ route, navigation }) {
           type: "Salon",
           stylistName: stylist.name,
           salonName: stylist.salon,
+          image: stylist.image,
+          rating: stylist.ratings,
         });
         setIsFavorite(true);
         setFavoriteCount((prev) => prev + 1);
@@ -92,11 +92,19 @@ function StylistProfile({ route, navigation }) {
     }
   };
 
-  const handleBooking = () => {
+  const handleBooking = (selectedTime) => {
     navigation.navigate("BookingConfirmation", {
-      stylistName: stylist.name,
-      bookingTime: "14:30",
-      bookingDate: "11 september",
+      stylist: {
+        name: stylist.name,
+        ratings: stylist.ratings,
+        salon: stylist.salon,
+        image: stylist.image,
+        treatment: stylist.treatment || "Klippning",
+        price: stylist.price,
+        distance: stylist.distance,
+      },
+      bookingTime: selectedTime,
+      bookingDate: "Idag",
     });
   };
 
@@ -109,6 +117,7 @@ function StylistProfile({ route, navigation }) {
           }}
           style={styles.placeholderImage}
         />
+
         <View style={styles.header}>
           <Text style={styles.stylistInfo}>
             <Text style={styles.stylistName}>{stylist.name} </Text>
@@ -126,7 +135,7 @@ function StylistProfile({ route, navigation }) {
           </View>
           <TouchableOpacity
             style={styles.bookingButton}
-            onPress={handleBooking}
+            onPress={() => handleBooking(stylist.time || "14:30")}
           >
             <Text style={styles.bookingButtonText}>Boka</Text>
           </TouchableOpacity>
@@ -161,7 +170,7 @@ function StylistProfile({ route, navigation }) {
           <Text style={styles.timePrice}>{stylist.price || "1200"} kr</Text>
           <TouchableOpacity
             style={styles.bookingButton}
-            onPress={handleBooking}
+            onPress={() => handleBooking("17:00")}
           >
             <Text style={styles.bookingButtonText}>Boka</Text>
           </TouchableOpacity>
@@ -172,7 +181,7 @@ function StylistProfile({ route, navigation }) {
           <Text style={styles.timePrice}>{stylist.price || "1200"} kr</Text>
           <TouchableOpacity
             style={styles.bookingButton}
-            onPress={handleBooking}
+            onPress={() => handleBooking("18:30")}
           >
             <Text style={styles.bookingButtonText}>Boka</Text>
           </TouchableOpacity>
