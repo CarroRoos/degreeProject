@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch } from "react-redux";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db, auth } from "../config/firebase";
 import { removeFavorite } from "../slices/salonSlice";
 import { removeUserFavorite } from "../slices/userSlice";
@@ -29,14 +29,31 @@ function Favorites() {
         loadFavorites(user.uid);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  const loadFavorites = async (userId) => {
-    if (!userId) {
-      return;
+  const saveFavorite = async (favorite) => {
+    try {
+      const sanitizedFavorite = {
+        favoriteId: favorite.id,
+        stylist: favorite.stylist,
+        displayName: favorite.displayName,
+        salon: favorite.salon,
+        type: favorite.type,
+        rating: favorite.rating,
+        userId: auth.currentUser.uid,
+        treatment: favorite.treatment,
+        distance: favorite.distance,
+        price: favorite.price,
+      };
+      await addDoc(collection(db, "favorites"), sanitizedFavorite);
+    } catch (error) {
+      console.error("Error saving favorite:", error);
     }
+  };
+
+  const loadFavorites = async (userId) => {
+    if (!userId) return;
 
     try {
       const favoritesQuery = query(
@@ -50,9 +67,19 @@ function Favorites() {
       querySnapshot.forEach((doc) => {
         const data = { ...doc.data(), docId: doc.id };
         if (data.type === "Salon") {
-          salons.push(data);
+          salons.push({
+            ...data,
+            stylist: data.stylist,
+            rating: data.rating,
+            treatment: data.treatment,
+            distance: data.distance,
+            price: data.price,
+          });
         } else if (data.type === "User") {
-          users.push(data);
+          users.push({
+            ...data,
+            displayName: data.displayName,
+          });
         }
       });
 
@@ -65,7 +92,6 @@ function Favorites() {
 
   const handleRemoveFavorite = async (item) => {
     const currentUser = auth.currentUser;
-
     if (!currentUser) {
       Alert.alert("Error", "Ingen inloggad användare");
       return;
@@ -87,7 +113,6 @@ function Favorites() {
           })
         ).unwrap();
       }
-
       await loadFavorites(currentUser.uid);
     } catch (error) {
       Alert.alert("Error", `Kunde inte ta bort favorit: ${error.message}`);
@@ -104,19 +129,21 @@ function Favorites() {
           time: item.time,
           treatment: item.treatment,
           price: item.price,
-          rating: item.ratings,
+          rating: item.rating,
           image: item.image,
           distance: item.distance,
         },
       });
     } else {
-      navigation.navigate("UserProfile", { userId: item.favoriteId });
+      navigation.navigate("UserProfile", {
+        userId: item.favoriteId,
+        displayName: item.displayName,
+      });
     }
   };
 
   const renderFavoriteCard = ({ item }) => {
     const isSalon = item.type === "Salon";
-
     return (
       <View style={styles.card}>
         <TouchableOpacity
@@ -158,7 +185,7 @@ function Favorites() {
   return (
     <View style={styles.container}>
       <View>
-        <View style={styles.headerTop}></View>
+        <View style={styles.headerTop} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
             Favoriter ({favorites.length + userFavorites.length})
@@ -184,7 +211,6 @@ function Favorites() {
                 item.id === "salonHeader"
                   ? favorites.length > 0
                   : userFavorites.length > 0;
-
               return shouldShow ? (
                 <Text style={styles.sectionHeader}>{item.title}</Text>
               ) : null;
@@ -198,7 +224,6 @@ function Favorites() {
           <Text style={styles.emptyText}>Inga favoriter ännu 💜</Text>
         </View>
       )}
-
       <Footer favoritesCount={favorites.length + userFavorites.length} />
     </View>
   );

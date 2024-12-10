@@ -79,10 +79,13 @@ function StylistProfile({ route, navigation }) {
           userId: currentUserId,
           favoriteId: stylist.id,
           type: "Salon",
-          stylistName: stylist.name,
-          salonName: stylist.salon,
+          stylist: stylist.name,
+          salon: stylist.salon,
           image: stylist.image,
           rating: stylist.ratings,
+          treatment: stylist.treatment,
+          distance: stylist.distance,
+          price: stylist.price,
         });
         setIsFavorite(true);
         setFavoriteCount((prev) => prev + 1);
@@ -159,8 +162,10 @@ function StylistProfile({ route, navigation }) {
             </View>
           </View>
           <Text style={styles.stylistDescription}>
-            15 års erfarenhet{"\n"}Innehar gesällbrev, mästarbrev{"\n"}
-            Utbildning i Hairtalk{"\n"}Salong: {stylist.salon}
+            15 års erfarenhet{"\n"}
+            Innehar gesällbrev, mästarbrev{"\n"}
+            Utbildning i Hairtalk{"\n"}
+            Salong: {stylist.salon}
           </Text>
         </View>
 
