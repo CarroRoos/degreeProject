@@ -47,19 +47,16 @@ const SalonCard = React.memo(
                 </Text>
               </View>
             )}
-
             <View style={styles.salonInfo}>
               <Text style={styles.salonName}>
-                {salon.salon || "Okänd salong"}
+                {salon._highlightResult?.stylist?.value || salon.stylist}
               </Text>
-              <Text style={styles.location}>
+              <Text style={styles.location}>{salon.salon}</Text>
+              <Text style={styles.categories}>
                 {salon.time ? `Kl. ${salon.time}` : "Tid ej angiven"} •{" "}
                 {salon.price ? `${salon.price} kr` : "Pris ej angivet"}
               </Text>
-              <Text style={styles.categories}>
-                {salon.distance ? `${salon.distance} km • ` : ""}
-                {getTreatmentText(salon)}
-              </Text>
+              <Text style={styles.treatment}>{getTreatmentText(salon)}</Text>
             </View>
           </View>
 

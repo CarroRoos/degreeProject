@@ -90,24 +90,27 @@ function SalonCard({ salon, navigation }) {
         }
         style={styles.imageContainer}
       >
-        {getImage(salon.image) && (
+        {getImage(salon.image) ? (
           <Image source={getImage(salon.image)} style={styles.profileImage} />
+        ) : (
+          <Text style={styles.placeholderImage}>No Image</Text>
         )}
         <View style={styles.ratingBadge}>
-          <Text style={styles.ratingText}>⭐ {salon.ratings}</Text>
+          <Text style={styles.ratingText}>⭐ {salon.ratings || "-"}</Text>
         </View>
       </TouchableOpacity>
 
       <View style={styles.info}>
-        <Text style={styles.treatment}>{salon.treatment}</Text>
-        <Text style={styles.time}>Kl. {salon.time}</Text>
-        <View style={styles.row}>
-          <Text style={styles.distance}>{salon.distance}</Text>
-          <Text style={styles.price}>{salon.price}</Text>
-        </View>
-        <Text style={styles.stylist}>
-          Stylist: {salon.stylist} på {salon.salon}
+        <Text style={styles.stylistName}>
+          {salon._highlightResult?.stylist?.value}
         </Text>
+        <Text style={styles.salonName}>{salon.salon}</Text>
+        <Text style={styles.treatment}>{salon.treatment}</Text>
+        <View style={styles.row}>
+          <Text style={styles.timeText}>Kl. {salon.time}</Text>
+          <Text style={styles.bullet}> • </Text>
+          <Text style={styles.price}>{salon.price} kr</Text>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -134,6 +137,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 20,
     alignItems: "center",
+    zIndex: 10,
   },
   imageContainer: {
     position: "relative",
@@ -143,6 +147,16 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     marginRight: 15,
+  },
+  placeholderImage: {
+    width: 65,
+    height: 60,
+    lineHeight: 60,
+    textAlign: "center",
+    backgroundColor: "#ddd",
+    borderRadius: 30,
+    marginRight: 15,
+    color: "#888",
   },
   ratingBadge: {
     position: "absolute",
@@ -164,36 +178,44 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+    padding: 5,
+  },
+  stylistName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 2,
+  },
+  salonName: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
   },
   treatment: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  time: {
     fontSize: 14,
-    color: "#555",
-    marginBottom: 5,
+    color: "#333",
+    marginBottom: 4,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 5,
+  },
+  timeText: {
+    fontSize: 14,
+    color: "#555",
+  },
+  bullet: {
+    color: "#666",
+    marginHorizontal: 5,
   },
   distance: {
     fontSize: 14,
     color: "#555",
-    marginRight: 10,
   },
   price: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#000",
-  },
-  stylist: {
-    fontSize: 14,
-    color: "#777",
-    marginBottom: 5,
   },
   favoriteButton: {
     padding: 10,
