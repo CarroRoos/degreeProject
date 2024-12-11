@@ -13,20 +13,8 @@ import { useDispatch, useSelector } from "react-redux";
 import Footer from "../components/Footer";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { db, auth } from "../config/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  setDoc,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import {
-  addFavorite,
-  removeFavorite,
-  loadFavorites,
-} from "../slices/salonSlice";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { addFavorite, removeFavorite } from "../slices/salonSlice";
 
 function StylistProfile({ route, navigation }) {
   const { stylist } = route.params;
@@ -56,7 +44,10 @@ function StylistProfile({ route, navigation }) {
 
       try {
         const isAlreadyFavorite = favorites.some(
-          (fav) => fav.id === stylist.id || fav.objectID === stylist.id
+          (fav) =>
+            fav.favoriteId === stylist.id ||
+            fav.id === stylist.id ||
+            fav.objectID === stylist.id
         );
         setIsFavorite(isAlreadyFavorite);
 
@@ -91,15 +82,13 @@ function StylistProfile({ route, navigation }) {
           })
         ).unwrap();
 
-        const docRef = doc(db, "favorites", `${currentUserId}-${stylist.id}`);
-        await deleteDoc(docRef);
-
         setIsFavorite(false);
         setFavoriteCount((prev) => Math.max(prev - 1, 0));
       } else {
         const salonData = {
           id: stylist.id,
           objectID: stylist.id,
+          favoriteId: stylist.id,
           stylist: stylist.name,
           salon: stylist.salon,
           type: "Salon",
@@ -117,21 +106,6 @@ function StylistProfile({ route, navigation }) {
             salon: salonData,
           })
         ).unwrap();
-
-        const docRef = doc(db, "favorites", `${currentUserId}-${stylist.id}`);
-        await setDoc(docRef, {
-          userId: currentUserId,
-          favoriteId: stylist.id,
-          type: "Salon",
-          stylist: stylist.name,
-          salon: stylist.salon,
-          image: stylist.image,
-          rating: stylist.ratings,
-          treatment: stylist.treatment,
-          distance: stylist.distance,
-          price: stylist.price,
-          time: stylist.time,
-        });
 
         setIsFavorite(true);
         setFavoriteCount((prev) => prev + 1);
