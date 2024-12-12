@@ -22,6 +22,7 @@ import SalonList from "../SalonList";
 import UserList from "../UserList";
 import Footer from "../components/Footer";
 import algoliaSearch from "../AlgoliaSearchService";
+import ExploreSection from "../components/ExploreSection";
 
 function Home({ navigation }) {
   const dispatch = useDispatch();
@@ -125,7 +126,7 @@ function Home({ navigation }) {
 
   const salonSortOptions = [
     { label: "För dig", value: "forYou" },
-    { label: "Stockholm", value: "stockholm" },
+    { label: "Annan plats", value: "stockholm" },
     { label: "Klippning", value: "haircut" },
   ];
 
@@ -135,7 +136,7 @@ function Home({ navigation }) {
     }
 
     if (!searchQuery.trim()) {
-      return <Text style={styles.heartIcon}>💜</Text>;
+      return <ExploreSection />;
     }
 
     return null;
@@ -258,18 +259,30 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: 20,
   },
   activeSortOption: {
-    backgroundColor: "#9E38EE",
+    backgroundColor: "#AF43F2",
   },
+
+  activeSortOptionText: {
+    color: "#fff",
+  },
+
   sortOptionText: {
     fontSize: 14,
     color: "#000",
   },
-  activeSortOptionText: {
-    color: "#fff",
-  },
+
   resultSection: {
     flex: 1,
   },
@@ -287,6 +300,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
+    marginTop: 20,
   },
   loadingText: {
     textAlign: "center",
