@@ -181,7 +181,7 @@ const SalonList = ({ data }) => {
     );
 
     const sortedByTime = [...validData].sort((a, b) =>
-      (a.time || "").localeCompare(b.time || "")
+      (a.time || "").toString().localeCompare((b.time || "").toString())
     );
     const sortedByPrice = [...validData].sort(
       (a, b) => (a.price || 0) - (b.price || 0)

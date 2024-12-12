@@ -86,18 +86,17 @@ function Home({ navigation }) {
 
       setLoading(true);
       try {
-        const searchOptions = userLocation
-          ? {
-              query,
-              aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
-              aroundRadius: 20000,
-            }
-          : { query };
+        const searchOptions = {
+          ...(userLocation
+            ? {
+                aroundLatLng: `${userLocation.latitude}, ${userLocation.longitude}`,
+                aroundRadius: 20000,
+              }
+            : {}),
+        };
 
-        const { salongerResults, usersResults } = await algoliaSearch.search(
-          query,
-          searchOptions
-        );
+        const { salongerResults, usersResults, currentTime } =
+          await algoliaSearch.search(query, searchOptions);
 
         dispatch(setFilteredSalons(salongerResults));
         dispatch(setUsers(usersResults));
