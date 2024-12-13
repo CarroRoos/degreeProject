@@ -124,23 +124,17 @@ function Home({ navigation }) {
     [dispatch]
   );
 
-  const salonSortOptions = [
-    { label: "För dig", value: "forYou" },
-    { label: "Annan plats", value: "stockholm" },
-    { label: "Klippning", value: "haircut" },
-  ];
-
   const ListHeaderComponent = useCallback(() => {
     if (loading) {
       return <Text style={styles.loadingText}>Laddar resultat...</Text>;
     }
 
     if (!searchQuery.trim()) {
-      return <ExploreSection />;
+      return <ExploreSection navigation={navigation} />;
     }
 
     return null;
-  }, [loading, searchQuery]);
+  }, [loading, searchQuery, navigation]);
 
   const renderItem = useCallback(() => {
     if (!searchQuery.trim() || loading) return null;
@@ -178,33 +172,6 @@ function Home({ navigation }) {
           onChangeText={handleSearch}
         />
       </View>
-
-      {searchQuery.trim() && (
-        <View style={styles.sortSection}>
-          <View style={styles.sortOptions}>
-            {salonSortOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                onPress={() => handleFilter(option.value)}
-                style={[
-                  styles.sortOption,
-                  currentFilter === option.value && styles.activeSortOption,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.sortOptionText,
-                    currentFilter === option.value &&
-                      styles.activeSortOptionText,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
 
       <FlatList
         data={[{ key: "content" }]}
@@ -280,17 +247,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultHeader: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#000",
-    marginBottom: 15,
-    backgroundColor: "#F4F4F4",
-    padding: 10,
     marginHorizontal: 16,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
     marginTop: 20,

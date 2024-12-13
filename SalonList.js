@@ -257,9 +257,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionHeader: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#9747FF",
+    color: "#000",
     marginBottom: 12,
     marginTop: 12,
   },
