@@ -202,12 +202,14 @@ function UserProfile({ route, navigation }) {
           onPress={() =>
             navigation.navigate("StylistProfile", {
               stylist: {
-                salon: user?.salon || "Björn Axén",
-                ratings: user?.ratings || "4.8",
-                reviews: user?.reviews || "recensioner",
-                name: user?.displayName || "Jennifer",
-                image: user?.photoURL || "default_image",
-                id: user?.id || "1",
+                id: user?.id || "default_id",
+                name: user?.displayName || "Okänd Stylist",
+                salon: user?.salon || "Okänd Salong",
+                ratings: user?.ratings || "5.0",
+                price: user?.price || "1200",
+                time: user?.time || "14:30",
+                treatment: user?.treatment || "Klippning",
+                distance: user?.distance || "0",
               },
             })
           }

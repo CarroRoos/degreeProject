@@ -23,6 +23,7 @@ import UserList from "../UserList";
 import Footer from "../components/Footer";
 import algoliaSearch from "../AlgoliaSearchService";
 import ExploreSection from "../components/ExploreSection";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 
 function Home({ navigation }) {
   const dispatch = useDispatch();
@@ -168,9 +169,18 @@ function Home({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Vad söker du idag?"
+          placeholderTextColor="#888"
           value={searchQuery}
           onChangeText={handleSearch}
         />
+        <TouchableOpacity onPress={() => console.log("Microphone pressed")}>
+          <MaterialIcons
+            name="mic"
+            size={24}
+            color="#9E38EE"
+            style={styles.icon}
+          />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -196,18 +206,23 @@ const styles = StyleSheet.create({
   searchSection: {
     backgroundColor: "#fff",
     borderRadius: 30,
-    padding: 5,
-    marginTop: 100,
-    marginHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
     marginTop: 150,
+    marginHorizontal: 18,
     marginBottom: 20,
   },
   input: {
+    flex: 1,
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 10,
-    fontSize: 18,
+    fontSize: 17,
     color: "#000",
+  },
+  icon: {
+    marginLeft: 10,
   },
   sortSection: {
     paddingHorizontal: 20,
