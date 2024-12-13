@@ -8,6 +8,7 @@ function ExploreSection({ navigation }) {
   const [availableTimes, setAvailableTimes] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [similarUsers, setSimilarUsers] = useState([]);
 
   useEffect(() => {
     const getUserLocation = async () => {
@@ -66,6 +67,21 @@ function ExploreSection({ navigation }) {
 
           setAvailableTimes(formattedTimes);
         }
+
+        if (response.usersResults && response.usersResults.length > 0) {
+          const formattedUsers = response.usersResults
+            .slice(0, 4)
+            .map((user) => ({
+              id: user.objectID,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              location: user.location,
+              email: user.email,
+              uid: user.uid,
+              categories: user.categories || [],
+            }));
+          setSimilarUsers(formattedUsers);
+        }
       } catch (error) {
         console.error("Fel vid hämtning av data:", error);
       } finally {
@@ -100,48 +116,97 @@ function ExploreSection({ navigation }) {
   };
 
   const renderTimeCard = (item) => {
-    const formattedTime = item.time.toString().padStart(2, "0");
+    const formattedTime = item.time
+      ? item.time.toString().padStart(2, "0")
+      : "00";
 
     return (
-      <TouchableOpacity
-        key={item.id}
-        style={styles.timeCard}
-        onPress={() => handleCardPress(item)}
-        activeOpacity={0.7}
-      >
-        <Image
-          source={
-            item.image
-              ? { uri: item.image }
-              : require("../assets/images/style1.png")
-          }
-          style={styles.stylistImage}
-        />
-        <View style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.salonText}>{item.stylist}</Text>
-            <View>
-              <View style={styles.ratingContainer}>
-                <Text style={styles.ratingText}>{item.ratings}</Text>
-                <MaterialIcons name="verified" size={16} color="#9E38EE" />
-              </View>
-              {item.isEco && (
-                <View style={[styles.ratingContainer, { marginTop: 4 }]}>
-                  <MaterialIcons name="eco" size={16} color="#26A570" />
-                </View>
-              )}
-            </View>
+      <View key={item.id} style={styles.timeCard}>
+        <View style={styles.imageContainer}>
+          <Image
+            source={
+              item.image
+                ? { uri: item.image }
+                : require("../assets/images/style1.png")
+            }
+            style={styles.stylistImage}
+          />
+          <View style={styles.ratingContainer}>
+            <Text style={styles.ratingText}>{item.ratings}</Text>
+            <MaterialIcons name="verified" size={14} color="#9E38EE" />
           </View>
+          {item.isEco && (
+            <View style={styles.ecoContainer}>
+              <MaterialIcons name="eco" size={16} color="#26A570" />
+            </View>
+          )}
+        </View>
+        <View style={styles.cardContent}>
+          <Text style={styles.salonText}>{item.stylist}</Text>
           <Text style={styles.treatmentText}>{item.treatment}</Text>
           <View style={styles.detailsRow}>
             <Text style={styles.timeText}>Kl. {formattedTime}:00</Text>
-            <Text style={styles.priceText}>{item.price} kr</Text>
+            <View style={styles.rightAlignedContainer}>
+              <TouchableOpacity
+                style={styles.bookButton}
+                onPress={() =>
+                  navigation.navigate("StylistProfile", {
+                    stylist: {
+                      id: item.id,
+                      name: item.stylist,
+                      salon: item.salon,
+                      ratings: item.ratings || "5.0",
+                      image: item.image,
+                      price: item.price || "N/A",
+                      time: formattedTime,
+                      treatment: item.treatment || "Okänd behandling",
+                      distance: item.distance || "0",
+                    },
+                  })
+                }
+              >
+                <Text style={styles.bookButtonText}>Boka</Text>
+              </TouchableOpacity>
+              <Text style={styles.priceText}>{item.price} kr</Text>
+            </View>
           </View>
-          <View style={styles.bottomRow}>
-            <Text style={styles.stylistText}>{item.salon}</Text>
-          </View>
+          <Text style={styles.stylistText}>{item.salon}</Text>
         </View>
-      </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderUserSection = () => {
+    if (similarUsers.length === 0) return null;
+
+    return (
+      <View style={styles.userSection}>
+        <Text style={styles.sectionTitle}>Användare med liknande intresse</Text>
+        <View style={styles.userList}>
+          {similarUsers.map((user) => (
+            <TouchableOpacity
+              key={user.id}
+              style={styles.userCard}
+              onPress={() =>
+                navigation.navigate("UserProfile", { userId: user.id })
+              }
+            >
+              {user.photoURL && user.photoURL.trim() !== "" ? (
+                <Image
+                  source={{ uri: user.photoURL }}
+                  style={styles.userImage}
+                />
+              ) : (
+                <View style={styles.emptyImageCircle} />
+              )}
+              <Text style={styles.userName}>{user.displayName}</Text>
+              {user.location && (
+                <Text style={styles.userLocation}>{user.location}</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     );
   };
 
@@ -163,6 +228,7 @@ function ExploreSection({ navigation }) {
           <Text style={styles.noTimesText}>Inga frisörer hittades</Text>
         )}
       </View>
+      {renderUserSection()}
     </View>
   );
 }
@@ -173,7 +239,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   mainTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 16,
     color: "#000",
@@ -184,7 +250,7 @@ const styles = StyleSheet.create({
   timeCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 8,
+    padding: 12,
     marginBottom: 8,
     flexDirection: "row",
     shadowColor: "#000",
@@ -196,29 +262,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  imageContainer: {
+    marginRight: 12,
+    alignItems: "center",
+  },
   stylistImage: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     borderRadius: 25,
-    marginRight: 8,
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 0,
-  },
-  salonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-    marginBottom: 0,
-    flex: 1,
-    marginRight: 8,
   },
   ratingContainer: {
     flexDirection: "row",
@@ -227,37 +278,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
+    marginTop: 4,
   },
   ratingText: {
     marginRight: 2,
     fontWeight: "600",
     fontSize: 12,
   },
+  cardContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  salonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 2,
+  },
   treatmentText: {
     fontSize: 14,
     color: "#444",
-    marginTop: -20,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   detailsRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    alignItems: "center",
+  },
+  rightAlignedContainer: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+    marginRight: 8,
+  },
+  detailsColumn: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    marginLeft: 8,
   },
   timeText: {
     color: "#666",
     fontSize: 13,
+    marginRight: 8,
+  },
+  ecoContainer: {
+    marginRight: 8,
   },
   priceText: {
+    marginTop: 4,
     color: "#000",
     fontWeight: "600",
     fontSize: 13,
-  },
-  bottomRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
   },
   stylistText: {
     color: "#666",
@@ -274,6 +344,75 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: "#666",
     fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 12,
+    marginTop: 20,
+  },
+  userSection: {
+    marginTop: 16,
+  },
+  userList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  userCard: {
+    width: "48%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  userImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000",
+    textAlign: "center",
+  },
+  userLocation: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+    textAlign: "center",
+  },
+  bookButton: {
+    backgroundColor: "#9E38EE",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: -20,
+  },
+  bookButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  emptyImageCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
