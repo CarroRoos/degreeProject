@@ -19,6 +19,18 @@ import { auth } from "./config/firebase";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import FastImage from "react-native-fast-image";
 
+const timeToNumber = (time) => {
+  if (!time) return Infinity;
+
+  if (typeof time === "number") return time;
+
+  if (typeof time === "string") {
+    return parseInt(time.split(":")[0]) || Infinity;
+  }
+
+  return Infinity;
+};
+
 const SalonCard = React.memo(
   ({ salon, onPress, onFavoritePress, isFavorited, isLoading }) => {
     const getTreatmentText = useCallback((salon) => {
@@ -180,12 +192,22 @@ const SalonList = ({ data }) => {
       (salon) => salon && (salon.objectID || salon.id)
     );
 
-    const sortedByTime = [...validData].sort((a, b) =>
-      (a.time || "").toString().localeCompare((b.time || "").toString())
-    );
+    const currentHour = new Date().getHours();
+
+    const sortedByTime = [...validData].sort((a, b) => {
+      const timeA = timeToNumber(a.time);
+      const timeB = timeToNumber(b.time);
+
+      const diffA = (timeA - currentHour + 24) % 24;
+      const diffB = (timeB - currentHour + 24) % 24;
+
+      return diffA - diffB;
+    });
+
     const sortedByPrice = [...validData].sort(
       (a, b) => (a.price || 0) - (b.price || 0)
     );
+
     const sortedByDistance = [...validData].sort(
       (a, b) => (a.distance || 0) - (b.distance || 0)
     );
