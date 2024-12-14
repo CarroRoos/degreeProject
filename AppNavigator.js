@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { loadFavorites } from "./slices/salonSlice";
 import { auth } from "./config/firebase";
 import Home from "./pages/Home";
+import HomeStylist from "./pages/HomeStylist";
 import Favorites from "./pages/Favorites";
 import Bookings from "./pages/Bookings";
 import Profile from "./pages/Profile";
@@ -40,6 +41,7 @@ function AppNavigator() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="HomeStylist" component={HomeStylist} />
         <Stack.Screen name="Favorites" component={Favorites} />
         <Stack.Screen name="Bookings" component={Bookings} />
         <Stack.Screen name="Profile" component={Profile} />

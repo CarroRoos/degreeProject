@@ -10,7 +10,8 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { auth } from "../config/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginScreen({ navigation }) {
@@ -28,13 +29,22 @@ export default function LoginScreen({ navigation }) {
         password
       );
 
+      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+      const userData = userDoc.data();
+
       dispatch(setCurrentUser(userCredential.user.uid));
 
       Alert.alert(
         "Inloggning lyckades!",
         `Välkommen tillbaka, ${userCredential.user.email}!`
       );
-      navigation.navigate("Home");
+
+      // Navigera baserat på användartyp
+      if (userData.accountType === "stylist") {
+        navigation.navigate("HomeStylist");
+      } else {
+        navigation.navigate("Home");
+      }
     } catch (error) {
       Alert.alert(
         "Inloggningsfel",

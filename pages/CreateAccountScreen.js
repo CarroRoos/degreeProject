@@ -6,6 +6,7 @@ import {
   Alert,
   Text,
   TextInput,
+  ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,23 +17,34 @@ import { auth } from "../config/firebase";
 const db = getFirestore();
 
 export default function CreateAccountScreen({ navigation }) {
-  const [name, setName] = useState("");
+  const [accountType, setAccountType] = useState(null); // 'user' eller 'stylist'
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const [userName, setUserName] = useState("");
+
+  const [stylistName, setStylistName] = useState("");
+  const [salonName, setSalonName] = useState("");
+  const [experience, setExperience] = useState("");
+  const [specialties, setSpecialties] = useState("");
 
   const handleCreateAccount = async () => {
     if (password !== confirmPassword) {
       Alert.alert("Fel", "Lösenorden matchar inte!");
       return;
     }
-
+    const name = accountType === "user" ? userName : stylistName;
     if (!name.trim()) {
-      Alert.alert("Fel", "Vänligen fyll i ditt namn");
+      Alert.alert("Fel", "Vänligen fyll i namn");
       return;
     }
-
+    if (accountType === "stylist" && !salonName.trim()) {
+      Alert.alert("Fel", "Vänligen fyll i salongens namn");
+      return;
+    }
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -40,22 +52,34 @@ export default function CreateAccountScreen({ navigation }) {
         email,
         password
       );
-
       const user = userCredential.user;
-
       await updateProfile(user, {
         displayName: name,
       });
 
-      await setDoc(doc(db, "users", user.uid), {
+      const userData = {
         uid: user.uid,
         email: user.email,
         displayName: name,
         photoURL: user.photoURL || "",
-      });
+        accountType: accountType,
+      };
 
+      if (accountType === "stylist") {
+        Object.assign(userData, {
+          salonName: salonName,
+          experience: experience,
+          specialties: specialties,
+        });
+      }
+      await setDoc(doc(db, "users", user.uid), userData);
       Alert.alert("Konto skapat!", "Ditt konto har skapats framgångsrikt.");
-      navigation.navigate("Home");
+
+      if (accountType === "stylist") {
+        navigation.navigate("HomeStylist");
+      } else {
+        navigation.navigate("Home");
+      }
     } catch (error) {
       Alert.alert("Ett fel inträffade", error.message || "Något gick fel!");
     } finally {
@@ -63,9 +87,167 @@ export default function CreateAccountScreen({ navigation }) {
     }
   };
 
-  const handleBack = () => {
-    navigation.goBack();
-  };
+  const renderAccountTypeSelection = () => (
+    <View style={styles.accountTypeContainer}>
+      <Text style={styles.title}>Skapa konto</Text>
+      <Text style={styles.subtitle}>Hej! Vem är du?</Text>
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[
+            styles.typeButton,
+            accountType === "user" && styles.selectedButton,
+          ]}
+          onPress={() => setAccountType("user")}
+        >
+          <Text
+            style={[
+              styles.typeButtonText,
+              accountType === "user" && styles.selectedButtonText,
+            ]}
+          >
+            Användare
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.typeButton,
+            accountType === "stylist" && styles.selectedButton,
+          ]}
+          onPress={() => setAccountType("stylist")}
+        >
+          <Text
+            style={[
+              styles.typeButtonText,
+              accountType === "stylist" && styles.selectedButtonText,
+            ]}
+          >
+            Frisör
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderUserForm = () => (
+    <View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Ditt namn"
+          value={userName}
+          onChangeText={setUserName}
+          autoCapitalize="words"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="E-postadress"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Lösenord"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Bekräfta lösenord"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+      </View>
+    </View>
+  );
+
+  const renderStylistForm = () => (
+    <View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Ditt namn"
+          value={stylistName}
+          onChangeText={setStylistName}
+          autoCapitalize="words"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Salongens namn"
+          value={salonName}
+          onChangeText={setSalonName}
+          autoCapitalize="words"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="E-postadress"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Antal års erfarenhet"
+          value={experience}
+          onChangeText={setExperience}
+          keyboardType="numeric"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Specialiteter (t.ex. färgning, klippning)"
+          value={specialties}
+          onChangeText={setSpecialties}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Lösenord"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Bekräfta lösenord"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+      </View>
+    </View>
+  );
 
   return (
     <LinearGradient
@@ -74,64 +256,39 @@ export default function CreateAccountScreen({ navigation }) {
       end={{ x: 0.5, y: 1 }}
       style={styles.gradientBackground}
     >
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+      <ScrollView style={styles.container}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Skapa konto</Text>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Ditt namn"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="E-postadress"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Lösenord"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Bekräfta lösenord"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-        </View>
+        {!accountType ? (
+          renderAccountTypeSelection()
+        ) : (
+          <View>
+            <Text style={styles.title}>
+              {accountType === "user"
+                ? "Skapa användarkonto"
+                : "Skapa frisörkonto"}
+            </Text>
+            {accountType === "user" ? renderUserForm() : renderStylistForm()}
+          </View>
+        )}
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={handleCreateAccount}
-            disabled={isLoading}
-          >
-            <Text style={styles.createButtonText}>
-              {isLoading ? "Skapar konto..." : "Skapa konto!"}
-            </Text>
-          </TouchableOpacity>
+          {accountType && (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={handleCreateAccount}
+              disabled={isLoading}
+            >
+              <Text style={styles.createButtonText}>
+                {isLoading ? "Skapar konto..." : "Skapa konto!"}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={styles.loginButton}
@@ -142,7 +299,7 @@ export default function CreateAccountScreen({ navigation }) {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </LinearGradient>
   );
 }
@@ -154,20 +311,62 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 50,
   },
   backButton: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 10,
+    marginTop: 50,
+    marginBottom: 20,
+  },
+  accountTypeContainer: {
+    alignItems: "center",
+    marginTop: 50,
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 20,
+    marginTop: 20,
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+  },
+  subtitle: {
+    fontSize: 18,
     color: "#000",
     marginBottom: 30,
-    marginTop: 100,
+  },
+  buttonRow: {
+    flexDirection: "column",
+    alignItems: "center",
+    width: "100%",
+    gap: 25,
+  },
+  typeButton: {
+    backgroundColor: "#fff",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  selectedButton: {
+    backgroundColor: "#9E38EE",
+  },
+  typeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#9E38EE",
+  },
+  selectedButtonText: {
+    color: "#fff",
   },
   inputContainer: {
     flexDirection: "row",
@@ -186,9 +385,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   buttonContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    marginBottom: 30,
+    marginVertical: 30,
   },
   createButton: {
     backgroundColor: "#fff",
@@ -209,6 +406,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 20,
   },
 });
