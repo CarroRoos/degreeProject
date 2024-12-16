@@ -15,6 +15,7 @@ import { removeFavorite } from "../slices/salonSlice";
 import { removeUserFavorite } from "../slices/userSlice";
 import Footer from "../components/Footer";
 import { useNavigation } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 function Favorites() {
   const navigation = useNavigation();
@@ -150,14 +151,20 @@ function Favorites() {
           style={styles.userCardContent}
           onPress={() => handleCardPress(item)}
         >
-          <Image
-            source={
-              isSalon
-                ? { uri: item.image || defaultAvatar }
-                : { uri: item.photoURL || defaultAvatar }
-            }
-            style={styles.profileImage}
-          />
+          {isSalon ? (
+            item.image ? (
+              <Image source={{ uri: item.image }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.placeholderImage}>
+                <MaterialIcons name="image" size={24} color="#888" />
+              </View>
+            )
+          ) : (
+            <Image
+              source={{ uri: item.photoURL || defaultAvatar }}
+              style={styles.profileImage}
+            />
+          )}
           <View style={styles.textContent}>
             <Text style={styles.name}>
               {isSalon ? item.stylist : item.displayName}
@@ -318,6 +325,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     color: "#999",
+  },
+  placeholderImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    fontSize: 10,
+    color: "#888",
+    marginTop: 4,
   },
 });
 

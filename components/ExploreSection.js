@@ -123,14 +123,13 @@ function ExploreSection({ navigation }) {
     return (
       <View key={item.id} style={styles.timeCard}>
         <View style={styles.imageContainer}>
-          <Image
-            source={
-              item.image
-                ? { uri: item.image }
-                : require("../assets/images/style1.png")
-            }
-            style={styles.stylistImage}
-          />
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.stylistImage} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <MaterialIcons name="image" size={24} color="#888" />
+            </View>
+          )}
           <View style={styles.ratingContainer}>
             <Text style={styles.ratingText}>{item.ratings}</Text>
             <MaterialIcons name="verified" size={14} color="#9E38EE" />
@@ -413,6 +412,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
     justifyContent: "center",
     alignItems: "center",
+  },
+  placeholderImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 25,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    fontSize: 10,
+    color: "#888",
+    marginTop: 4,
   },
 });
 

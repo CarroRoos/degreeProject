@@ -19,7 +19,14 @@ import Footer from "../components/Footer";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { auth, storage, db } from "../config/firebase";
 import { ref, listAll, getDownloadURL } from "firebase/storage";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  query,
+  where,
+  getDocs,
+  collection,
+} from "firebase/firestore";
 
 function UserProfile({ route, navigation }) {
   const dispatch = useDispatch();
@@ -31,6 +38,7 @@ function UserProfile({ route, navigation }) {
   );
   const [gallery, setGallery] = useState([]);
   const [user, setUser] = useState(null);
+  const [favoriteSalon, setFavoriteSalon] = useState(null);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
   const isFavorite = userFavorites.some((fav) => fav.uid === userId);
@@ -60,6 +68,24 @@ function UserProfile({ route, navigation }) {
       setGallery(images.reverse());
     } catch (error) {
       console.error("Error loading images:", error);
+    }
+  };
+
+  const loadFavoriteSalon = async (userId) => {
+    try {
+      const favoritesQuery = query(
+        collection(db, "favorites"),
+        where("userId", "==", userId),
+        where("type", "==", "Salon")
+      );
+      const querySnapshot = await getDocs(favoritesQuery);
+      if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error loading favorite salon:", error);
+      return null;
     }
   };
 
@@ -103,6 +129,7 @@ function UserProfile({ route, navigation }) {
       loadUserData(userId);
       loadUserImages(userId);
       dispatch(loadUserFavoriteCount(userId));
+      loadFavoriteSalon(userId).then(setFavoriteSalon);
     }
   }, [userId, dispatch]);
 
@@ -177,16 +204,28 @@ function UserProfile({ route, navigation }) {
           style={styles.stylistButton}
           onPress={() =>
             navigation.navigate("StylistProfile", {
-              stylist: {
-                id: user?.id || "default_id",
-                name: user?.displayName || "Okänd Stylist",
-                salon: user?.salon || "Okänd Salong",
-                ratings: user?.ratings || "5.0",
-                price: user?.price || "1200",
-                time: user?.time || "14:30",
-                treatment: user?.treatment || "Klippning",
-                distance: user?.distance || "0",
-              },
+              stylist: favoriteSalon
+                ? {
+                    id: favoriteSalon.favoriteId,
+                    name: favoriteSalon.stylist,
+                    salon: favoriteSalon.salon,
+                    ratings: favoriteSalon.ratings || favoriteSalon.rating,
+                    treatment: favoriteSalon.treatment || "Klippning",
+                    distance: favoriteSalon.distance || "0",
+                    price: favoriteSalon.price || "1200",
+                    time: favoriteSalon.time || "14:30",
+                    image: favoriteSalon.image || "",
+                  }
+                : {
+                    id: user?.id || "default_id",
+                    name: user?.displayName || "Okänd Stylist",
+                    salon: user?.salon || "Okänd Salong",
+                    ratings: user?.ratings || "5.0",
+                    price: user?.price || "1200",
+                    time: user?.time || "14:30",
+                    treatment: user?.treatment || "Klippning",
+                    distance: user?.distance || "0",
+                  },
             })
           }
         >

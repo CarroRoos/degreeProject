@@ -94,12 +94,14 @@ function StylistProfile({ route, navigation }) {
           stylist: stylist.name,
           salon: stylist.salon,
           type: "Salon",
-          image: stylist.image,
-          rating: stylist.ratings,
-          treatment: stylist.treatment,
-          distance: stylist.distance,
-          price: stylist.price,
-          time: stylist.time,
+          image: stylist.image || "",
+          rating: stylist.ratings || stylist.rating || "",
+          ratings: stylist.ratings || stylist.rating || "",
+          treatment: stylist.treatment || "",
+          distance: stylist.distance || "",
+          price: stylist.price || "",
+          time: stylist.time || "",
+          userId: currentUserId,
         };
 
         await dispatch(

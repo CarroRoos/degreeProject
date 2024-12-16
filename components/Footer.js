@@ -2,7 +2,13 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
 import { db, auth } from "../config/firebase";
 
 function Footer({ disableHighlight = true }) {
@@ -11,28 +17,29 @@ function Footer({ disableHighlight = true }) {
   const [favoritesCount, setFavoritesCount] = useState(0);
 
   useEffect(() => {
-    const loadFavoritesCount = async () => {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-      try {
-        const favoritesQuery = query(
-          collection(db, "favorites"),
-          where("userId", "==", currentUser.uid)
-        );
-        const querySnapshot = await getDocs(favoritesQuery);
-        setFavoritesCount(querySnapshot.size);
-      } catch (error) {
-        console.error("Error loading favorites count:", error);
+    const favoritesQuery = query(
+      collection(db, "favorites"),
+      where("userId", "==", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      favoritesQuery,
+      (snapshot) => {
+        setFavoritesCount(snapshot.size);
+      },
+      (error) => {
+        console.error("Error listening to favorites:", error);
       }
-    };
+    );
 
-    loadFavoritesCount();
-  }, [route.name]);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <View style={styles.footer}>
-      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Home")}
         style={styles.footerItem}
@@ -44,7 +51,6 @@ function Footer({ disableHighlight = true }) {
         />
       </TouchableOpacity>
 
-      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Favorites")}
         style={styles.footerItem}
@@ -63,7 +69,6 @@ function Footer({ disableHighlight = true }) {
         )}
       </TouchableOpacity>
 
-      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Bookings")}
         style={styles.footerItem}
@@ -77,16 +82,13 @@ function Footer({ disableHighlight = true }) {
         />
       </TouchableOpacity>
 
-      {}
       <TouchableOpacity
         onPress={() => navigation.navigate("Profile")}
         style={styles.footerItem}
       >
         <Image
           source={{
-            uri:
-              "https://your-image-url-here.com/profile.jpg" ||
-              "https://via.placeholder.com/35",
+            uri: auth.currentUser?.photoURL || "https://via.placeholder.com/35",
           }}
           style={[
             styles.profileImage,

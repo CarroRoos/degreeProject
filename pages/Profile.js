@@ -220,12 +220,29 @@ function Profile({ navigation }) {
                 style={styles.stylistButton}
                 onPress={() =>
                   navigation.navigate("StylistProfile", {
-                    stylist: favoriteSalon || {
-                      salon: "Standard Salong",
-                      ratings: "4.8",
-                      reviews: "0 recensioner",
-                      name: "Ingen favorit vald",
-                    },
+                    stylist: favoriteSalon
+                      ? {
+                          id: favoriteSalon.favoriteId,
+                          name: favoriteSalon.stylist,
+                          salon: favoriteSalon.salon,
+                          ratings:
+                            favoriteSalon.ratings || favoriteSalon.rating,
+                          treatment: favoriteSalon.treatment || "Klippning",
+                          distance: favoriteSalon.distance || "0",
+                          price: favoriteSalon.price || "1200",
+                          time: favoriteSalon.time || "14:30",
+                          image: favoriteSalon.image || "",
+                        }
+                      : {
+                          salon: "Standard Salong",
+                          ratings: "4.8",
+                          reviews: "0 recensioner",
+                          name: "Ingen favorit vald",
+                          treatment: "Klippning",
+                          price: "1200",
+                          time: "14:30",
+                          distance: "0",
+                        },
                   })
                 }
               >
