@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { LinearGradient } from "expo-linear-gradient";
+import FooterStylist from "../components/FooterStylist";
 
 const getPlaceholderImage = (name) => {
   return {
@@ -44,7 +47,7 @@ const ServiceCard = ({
     <Image source={getPlaceholderImage(stylist)} style={styles.serviceImage} />
     <View style={styles.ratingContainer}>
       <Text style={styles.ratingText}>⭐ {rating}</Text>
-      {isFavorite && <Ionicons name="heart" size={16} color="#9747FF" />}
+      {isFavorite && <Icon name="shopping" size={16} color="#9747FF" />}
     </View>
     <View style={styles.serviceInfo}>
       <Text style={styles.serviceTitle}>{title}</Text>
@@ -134,7 +137,12 @@ const HomeStylist = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={["#FFFFFF", "#AF43F2", "#000000"]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 5 }}
+      style={styles.container}
+    >
       <ScrollView>
         <Text style={styles.welcomeText}>Välkommen tillbaka!</Text>
 
@@ -170,41 +178,27 @@ const HomeStylist = () => {
         </View>
       </ScrollView>
 
-      {}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={[styles.navItem, styles.activeNavItem]}>
-          <Ionicons name="home" size={24} color="#9747FF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="cart-outline" size={24} color="#666" />
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>3</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="list-outline" size={24} color="#666" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={getPlaceholderImage("User")}
-            style={styles.profileImage}
-          />
-        </TouchableOpacity>
-      </View>
-    </View>
+      <FooterStylist />
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "bold",
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 150,
+    paddingBottom: 80,
+    color: "#000",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   section: {
     marginBottom: 20,
@@ -214,6 +208,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 20,
     marginBottom: 10,
+    color: "#000",
   },
   bookingCard: {
     flexDirection: "row",
@@ -225,7 +220,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -355,42 +350,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 10,
-  },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "white",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-  },
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 50,
-    height: 50,
-  },
-  activeNavItem: {},
-  profileImage: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-  },
-  badge: {
-    position: "absolute",
-    top: 5,
-    right: 5,
-    backgroundColor: "#9747FF",
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    color: "white",
-    fontSize: 12,
   },
 });
 
