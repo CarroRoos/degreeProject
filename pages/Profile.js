@@ -199,45 +199,13 @@ function Profile({ navigation }) {
                     <Text style={styles.favoriteCount}>{favoriteCount}</Text>
                   </View>
                 </View>
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => navigation.navigate("EditProfile")}
-                  >
-                    <Text style={styles.buttonText}>+ bilder</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.shareButton}
-                    onPress={() => navigation.navigate("EditMyProfile")}
-                  >
-                    <Text style={styles.buttonText}>Redigera</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={styles.logoutButton}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.logoutButtonText}>Logga ut</Text>
-                </TouchableOpacity>
               </View>
 
               <View style={styles.scissorsContainer}>
-                <Image
-                  source={require("../assets/icons/scissors2.png")}
-                  style={[styles.scissorIcon, { tintColor: "#9E38EE" }]}
-                />
-                <Image
-                  source={require("../assets/icons/nail-polish.png")}
-                  style={[styles.scissorIcon, { tintColor: "#000" }]}
-                />
-                <Image
-                  source={require("../assets/icons/spa_.png")}
-                  style={[styles.scissorIcon, { tintColor: "#000" }]}
-                />
-                <Image
-                  source={require("../assets/icons/makeup_.png")}
-                  style={[styles.scissorIcon, { tintColor: "#000" }]}
-                />
+                <Icon name="content-cut" size={40} color="#9E38EE" />
+                <Icon name="bottle-tonic-outline" size={40} color="#000" />
+                <Icon name="spa-outline" size={40} color="#000" />
+                <Icon name="face-woman-shimmer" size={40} color="#000" />
               </View>
             </>
           }
@@ -263,6 +231,29 @@ function Profile({ navigation }) {
               >
                 <Text style={styles.stylistButtonText}>Min Frisör</Text>
               </TouchableOpacity>
+
+              <View style={styles.bottomButtonContainer}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => navigation.navigate("EditProfile")}
+                >
+                  <Text style={styles.buttonText}>+ bilder</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.shareButton}
+                  onPress={() => navigation.navigate("EditMyProfile")}
+                >
+                  <Text style={styles.buttonText}>Redigera</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.logoutButton}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.logoutButtonText}>Logga ut</Text>
+                </TouchableOpacity>
+              </View>
             </>
           }
           contentContainerStyle={styles.flatListContent}
@@ -333,40 +324,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "80%",
-    marginTop: 20,
-  },
-  editButton: {
-    backgroundColor: "#9E38EE",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-  },
-  shareButton: {
-    backgroundColor: "#9E38EE",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  logoutButton: {
-    backgroundColor: "#ff4444",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  logoutButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
   scissorsContainer: {
     flexDirection: "row",
     justifyContent: "space-evenly",
@@ -418,13 +375,50 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 20,
     marginTop: 20,
-    marginBottom: 200,
     alignItems: "center",
   },
   stylistButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  bottomButtonContainer: {
+    width: "40%",
+    paddingHorizontal: 20,
+    marginTop: 50,
+    marginBottom: 100,
+    gap: 10,
+  },
+  editButton: {
+    backgroundColor: "#9E38EE",
+    paddingVertical: 12,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  shareButton: {
+    backgroundColor: "#9E38EE",
+    paddingVertical: 12,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  logoutButton: {
+    backgroundColor: "#9E38EE",
+    paddingVertical: 12,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
 

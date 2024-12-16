@@ -152,34 +152,10 @@ function UserProfile({ route, navigation }) {
         </View>
 
         <View style={styles.scissorsContainer}>
-          <Image
-            source={require("../assets/icons/scissors2.png")}
-            style={[
-              styles.scissorIcon,
-              { tintColor: styles.scissorIcon.tintColor("scissors2") },
-            ]}
-          />
-          <Image
-            source={require("../assets/icons/nail-polish.png")}
-            style={[
-              styles.scissorIcon,
-              { tintColor: styles.scissorIcon.tintColor("nail-polish") },
-            ]}
-          />
-          <Image
-            source={require("../assets/icons/spa_.png")}
-            style={[
-              styles.scissorIcon,
-              { tintColor: styles.scissorIcon.tintColor("spa_") },
-            ]}
-          />
-          <Image
-            source={require("../assets/icons/makeup_.png")}
-            style={[
-              styles.scissorIcon,
-              { tintColor: styles.scissorIcon.tintColor("makeup_") },
-            ]}
-          />
+          <Icon name="content-cut" size={40} color="#9E38EE" />
+          <Icon name="bottle-tonic-outline" size={40} color="#000" />
+          <Icon name="spa-outline" size={40} color="#000" />
+          <Icon name="face-woman-shimmer" size={40} color="#000" />
         </View>
 
         <FlatList
