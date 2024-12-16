@@ -30,9 +30,11 @@ function StylistProfile({ route, navigation }) {
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
+    "https://via.placeholder.com/150",
   ];
 
   const customerGallery = [
+    "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
     "https://via.placeholder.com/150",
@@ -147,8 +149,17 @@ function StylistProfile({ route, navigation }) {
         <View style={styles.header}>
           <Text style={styles.stylistInfo}>
             <Text style={styles.stylistName}>{stylist.name} </Text>
-            hos {stylist.salon} ⭐ {stylist.ratings} - recensioner
+            hos {stylist.salon} ⭐ {stylist.ratings}
           </Text>
+        </View>
+
+        <View style={styles.iconContainer}>
+          <View style={styles.iconItem}>
+            <MaterialCommunityIcons name="leaf" size={24} color="#26A570" />
+          </View>
+          <View style={styles.iconItem}>
+            <MaterialCommunityIcons name="coffee" size={24} color="#9E38EE" />
+          </View>
         </View>
 
         <View style={styles.bookingSection}>
@@ -178,7 +189,7 @@ function StylistProfile({ route, navigation }) {
               >
                 <MaterialCommunityIcons
                   name={isFavorite ? "heart" : "heart-outline"}
-                  size={40}
+                  size={30}
                   color={isFavorite ? "#9E38EE" : "#777"}
                 />
                 <Text style={styles.favoriteCount}>{favoriteCount}</Text>
@@ -289,8 +300,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 20,
+    marginLeft: 20,
     position: "relative",
   },
   stylistName: {
@@ -372,7 +384,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   roleText: {
-    fontSize: 24,
+    fontSize: 21,
     color: "#555",
     marginRight: 10,
   },
@@ -468,6 +480,22 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 10,
     marginBottom: 20,
+  },
+  iconContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 20,
+    marginTop: -40,
+    marginRight: 20,
+  },
+  iconItem: {
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  iconText: {
+    fontSize: 12,
+    color: "#555",
+    marginTop: 5,
   },
 });
 
