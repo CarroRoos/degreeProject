@@ -18,40 +18,51 @@ const db = getFirestore();
 
 export default function CreateAccountScreen({ navigation }) {
   const [accountType, setAccountType] = useState(null);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
   const [userName, setUserName] = useState("");
-
   const [stylistName, setStylistName] = useState("");
   const [salonName, setSalonName] = useState("");
   const [experience, setExperience] = useState("");
   const [specialties, setSpecialties] = useState("");
 
   const handleCreateAccount = async () => {
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      Alert.alert("Fel", "Vänligen fyll i alla fält");
+      return;
+    }
+
     if (password !== confirmPassword) {
       Alert.alert("Fel", "Lösenorden matchar inte!");
       return;
     }
+
+    if (password.length < 6) {
+      Alert.alert("Fel", "Lösenordet måste vara minst 6 tecken långt");
+      return;
+    }
+
     const name = accountType === "user" ? userName : stylistName;
     if (!name.trim()) {
       Alert.alert("Fel", "Vänligen fyll i namn");
       return;
     }
+
     if (accountType === "stylist" && !salonName.trim()) {
       Alert.alert("Fel", "Vänligen fyll i salongens namn");
       return;
     }
+
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        email,
+        email.trim(),
         password
       );
+
       const user = userCredential.user;
       await updateProfile(user, {
         displayName: name,
@@ -63,25 +74,54 @@ export default function CreateAccountScreen({ navigation }) {
         displayName: name,
         photoURL: user.photoURL || "",
         accountType: accountType,
+        createdAt: new Date().toISOString(),
       };
 
       if (accountType === "stylist") {
         Object.assign(userData, {
-          salonName: salonName,
-          experience: experience,
-          specialties: specialties,
+          salonName: salonName.trim(),
+          experience: experience.trim(),
+          specialties: specialties.trim(),
         });
       }
-      await setDoc(doc(db, "users", user.uid), userData);
-      Alert.alert("Konto skapat!", "Ditt konto har skapats framgångsrikt.");
 
-      if (accountType === "stylist") {
-        navigation.navigate("HomeStylist");
-      } else {
-        navigation.navigate("Home");
-      }
+      await setDoc(doc(db, "users", user.uid), userData);
+
+      Alert.alert(
+        "Välkommen!",
+        ` ${name}! 👋 Ditt konto har skapats framgångsrikt.`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              if (accountType === "stylist") {
+                navigation.replace("HomeStylist");
+              } else {
+                navigation.replace("Home");
+              }
+            },
+          },
+        ]
+      );
     } catch (error) {
-      Alert.alert("Ett fel inträffade", error.message || "Något gick fel!");
+      let errorMessage = "Ett fel inträffade vid registrering";
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "Det finns redan ett konto med denna e-postadress";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Ogiltig e-postadress";
+          break;
+        case "auth/operation-not-allowed":
+          errorMessage = "E-post/lösenordsregistrering är inte aktiverad";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Lösenordet är för svagt";
+          break;
+      }
+
+      Alert.alert("Registreringsfel", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -280,7 +320,7 @@ export default function CreateAccountScreen({ navigation }) {
         <View style={styles.buttonContainer}>
           {accountType && (
             <TouchableOpacity
-              style={styles.createButton}
+              style={[styles.createButton, isLoading && styles.disabledButton]}
               onPress={handleCreateAccount}
               disabled={isLoading}
             >
@@ -393,6 +433,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
     marginBottom: 10,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   createButtonText: {
     color: "#9E38EE",

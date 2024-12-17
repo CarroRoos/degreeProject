@@ -21,34 +21,65 @@ export default function LoginScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Fel", "Vänligen fyll i både email och lösenord");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        email.trim(),
         password
       );
 
       const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
-      const userData = userDoc.data();
+      if (!userDoc.exists()) {
+        throw new Error("Användarprofil hittades inte");
+      }
 
+      const userData = userDoc.data();
       dispatch(setCurrentUser(userCredential.user.uid));
 
       Alert.alert(
-        "Inloggning lyckades!",
-        `Välkommen tillbaka, ${userCredential.user.email}!`
+        "Välkommen!",
+        ` ${userData.displayName || userCredential.user.email}! 💜`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              if (userData.accountType === "stylist") {
+                navigation.replace("HomeStylist");
+              } else {
+                navigation.replace("Home");
+              }
+            },
+          },
+        ]
       );
-
-      if (userData.accountType === "stylist") {
-        navigation.navigate("HomeStylist");
-      } else {
-        navigation.navigate("Home");
-      }
     } catch (error) {
-      Alert.alert(
-        "Inloggningsfel",
-        error.message || "Kontrollera dina inloggningsuppgifter."
-      );
+      let errorMessage = "Ett fel inträffade vid inloggning";
+
+      switch (error.code) {
+        case "auth/invalid-email":
+          errorMessage = "Ogiltig e-postadress";
+          break;
+        case "auth/user-disabled":
+          errorMessage = "Detta konto har inaktiverats";
+          break;
+        case "auth/user-not-found":
+          errorMessage = "Ingen användare hittades med denna e-postadress";
+          break;
+        case "auth/wrong-password":
+          errorMessage = "Felaktigt lösenord";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "För många försök. Vänligen försök igen senare";
+          break;
+      }
+
+      Alert.alert("Inloggningsfel", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +105,7 @@ export default function LoginScreen({ navigation }) {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            autoCapitalize="none"
           />
         </View>
         <View style={styles.inputContainer}>
@@ -92,7 +124,7 @@ export default function LoginScreen({ navigation }) {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.loginButton, isLoading && styles.disabledButton]}
             onPress={handleLogin}
             disabled={isLoading}
           >
@@ -167,6 +199,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
     marginBottom: 10,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: "#9E38EE",

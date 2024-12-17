@@ -118,11 +118,11 @@ function Profile({ navigation }) {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
       dispatch(setCurrentUser(null));
       dispatch(clearUserFavorites());
       dispatch(clearFavorites());
-      navigation.replace("Login");
+
+      await signOut(auth);
     } catch (error) {
       Alert.alert("Fel vid utloggning", error.message);
     }
@@ -348,11 +348,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     width: "100%",
     marginBottom: 10,
-  },
-  scissorIcon: {
-    marginTop: 30,
-    width: 40,
-    height: 40,
   },
   imageWrapper: {
     flex: 1 / 3,
