@@ -17,7 +17,7 @@ import { auth } from "../config/firebase";
 const db = getFirestore();
 
 export default function CreateAccountScreen({ navigation }) {
-  const [accountType, setAccountType] = useState(null); // 'user' eller 'stylist'
+  const [accountType, setAccountType] = useState(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

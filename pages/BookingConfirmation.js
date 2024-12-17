@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "flex-start",
-    paddingTop: 50,
+    paddingTop: 100,
   },
   backButton: {
     position: "absolute",
@@ -111,18 +111,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   heading: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 30,
     color: "#000",
   },
   subheading: {
-    fontSize: 20,
+    fontSize: 16,
     color: "#555",
     marginBottom: 10,
+    fontWeight: "bold",
   },
   bookingDetails: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#555",
     marginBottom: 5,
   },

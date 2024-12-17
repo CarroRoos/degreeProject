@@ -39,7 +39,6 @@ export default function LoginScreen({ navigation }) {
         `Välkommen tillbaka, ${userCredential.user.email}!`
       );
 
-      // Navigera baserat på användartyp
       if (userData.accountType === "stylist") {
         navigation.navigate("HomeStylist");
       } else {

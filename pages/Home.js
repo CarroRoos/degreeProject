@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 10,
-    fontSize: 17,
+    fontSize: 16,
     color: "#000",
   },
   icon: {
@@ -255,14 +255,14 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   sortOptionText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#000",
   },
   resultSection: {
     flex: 1,
   },
   resultHeader: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#000",
     marginHorizontal: 16,
