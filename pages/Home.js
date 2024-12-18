@@ -273,6 +273,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
     marginTop: 20,
+    marginBottom: 20,
   },
   loadingText: {
     textAlign: "center",

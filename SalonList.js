@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  SectionList,
+  FlatList,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,18 +18,6 @@ import {
 import { auth } from "./config/firebase";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import FastImage from "react-native-fast-image";
-
-const timeToNumber = (time) => {
-  if (!time) return Infinity;
-
-  if (typeof time === "number") return time;
-
-  if (typeof time === "string") {
-    return parseInt(time.split(":")[0]) || Infinity;
-  }
-
-  return Infinity;
-};
 
 const SalonCard = React.memo(
   ({ salon, onPress, onFavoritePress, isFavorited, isLoading }) => {
@@ -43,23 +31,23 @@ const SalonCard = React.memo(
     if (!salon) return null;
 
     return (
-      <TouchableOpacity style={styles.salonCard} onPress={() => onPress(salon)}>
-        <View style={styles.contentContainer}>
-          <View style={styles.leftContent}>
+      <View style={styles.salonCard}>
+        <TouchableOpacity onPress={() => onPress(salon)}>
+          <View style={styles.cardContent}>
             {salon.image ? (
               <FastImage
                 source={{ uri: salon.image }}
-                style={styles.salonImage}
+                style={styles.profileImage}
                 resizeMode={FastImage.resizeMode.cover}
               />
             ) : (
-              <View style={[styles.salonImage, styles.placeholderImage]}>
+              <View style={[styles.profileImage, styles.placeholderImage]}>
                 <Text style={styles.placeholderText}>
                   {salon.salon?.charAt(0) || "S"}
                 </Text>
               </View>
             )}
-            <View style={styles.salonInfo}>
+            <View style={styles.textContent}>
               <Text style={styles.salonName}>
                 {salon._highlightResult?.stylist?.value || salon.stylist}
               </Text>
@@ -68,27 +56,26 @@ const SalonCard = React.memo(
                 {salon.time ? `Kl. ${salon.time}` : "Tid ej angiven"} •{" "}
                 {salon.price ? `${salon.price} kr` : "Pris ej angivet"}
               </Text>
-              <Text style={styles.treatment}>{getTreatmentText(salon)}</Text>
+              <Text style={styles.categories}>{getTreatmentText(salon)}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={() => onFavoritePress(salon)}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#9747FF" />
+              ) : (
+                <Icon
+                  name={isFavorited ? "favorite" : "favorite-border"}
+                  size={24}
+                  color={isFavorited ? "#9E38EE" : "#666"}
+                />
+              )}
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={() => onFavoritePress(salon)}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#9747FF" />
-            ) : (
-              <Icon
-                name={isFavorited ? "favorite" : "favorite-border"}
-                size={24}
-                color={isFavorited ? "#9747FF" : "#666"}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   }
 );
@@ -98,6 +85,7 @@ const SalonList = ({ data }) => {
   const dispatch = useDispatch();
   const favorites = useSelector((state) => state.salons.favorites || []);
   const [loadingFavorites, setLoadingFavorites] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState("Tidigaste");
 
   useEffect(() => {
     const currentUser = auth.currentUser;
@@ -109,7 +97,6 @@ const SalonList = ({ data }) => {
   const handleSalonPress = useCallback(
     (salon) => {
       if (!salon) return;
-
       const stylistData = {
         id: salon.objectID || salon.id,
         name: salon.stylist,
@@ -122,7 +109,6 @@ const SalonList = ({ data }) => {
         distance: salon.distance || "",
         description: salon.description || "",
       };
-
       navigation.navigate("StylistProfile", { stylist: stylistData });
     },
     [navigation]
@@ -131,7 +117,6 @@ const SalonList = ({ data }) => {
   const isFavorite = useCallback(
     (salon) => {
       if (!salon || (!salon.objectID && !salon.id)) return false;
-
       const salonId = salon.objectID || salon.id;
       return favorites.some(
         (fav) => fav.id === salonId || fav.objectID === salonId
@@ -158,7 +143,6 @@ const SalonList = ({ data }) => {
 
       try {
         setLoadingFavorites((prev) => ({ ...prev, [salonId]: true }));
-
         if (isFavorite(salon)) {
           await dispatch(
             removeFavorite({
@@ -194,28 +178,23 @@ const SalonList = ({ data }) => {
 
     const currentHour = new Date().getHours();
 
-    const sortedByTime = [...validData].sort((a, b) => {
-      const timeA = timeToNumber(a.time);
-      const timeB = timeToNumber(b.time);
-
-      const diffA = (timeA - currentHour + 24) % 24;
-      const diffB = (timeB - currentHour + 24) % 24;
-
-      return diffA - diffB;
+    const validTimes = validData.filter((salon) => {
+      if (typeof salon.time !== "number") return false;
+      return salon.time > currentHour;
     });
 
+    const sortedByTime = [...validTimes].sort((a, b) => a.time - b.time);
     const sortedByPrice = [...validData].sort(
       (a, b) => (a.price || 0) - (b.price || 0)
     );
-
     const sortedByDistance = [...validData].sort(
       (a, b) => (a.distance || 0) - (b.distance || 0)
     );
 
     return [
-      { title: "Tidigaste", data: sortedByTime.slice(0, 3) },
-      { title: "Billigaste", data: sortedByPrice.slice(0, 3) },
-      { title: "Närmaste", data: sortedByDistance.slice(0, 3) },
+      { title: "Tidigaste", data: sortedByTime },
+      { title: "Billigaste", data: sortedByPrice },
+      { title: "Närmaste", data: sortedByDistance },
     ];
   }, [data]);
 
@@ -236,16 +215,9 @@ const SalonList = ({ data }) => {
     [handleSalonPress, handleFavoritePress, isFavorite, loadingFavorites]
   );
 
-  const renderSectionHeader = useCallback(
-    ({ section: { title } }) => (
-      <Text style={styles.sectionHeader}>{title}</Text>
-    ),
-    []
+  const filteredSections = sections.filter(
+    (section) => section.title === selectedCategory
   );
-
-  const keyExtractor = useCallback((item) => {
-    return item?.objectID || item?.id || String(Math.random());
-  }, []);
 
   if (!Array.isArray(data) || data.length === 0) {
     return (
@@ -257,17 +229,39 @@ const SalonList = ({ data }) => {
 
   return (
     <View style={styles.container}>
-      <SectionList
-        sections={sections}
+      <View style={styles.headerContainer}>
+        <View style={styles.categoriesWrapper}>
+          {sections.map((section) => (
+            <TouchableOpacity
+              key={section.title}
+              onPress={() => setSelectedCategory(section.title)}
+              style={[
+                styles.categoryTab,
+                selectedCategory === section.title &&
+                  styles.selectedCategoryTab,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === section.title &&
+                    styles.selectedCategoryText,
+                ]}
+              >
+                {section.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+      <FlatList
+        data={filteredSections[0]?.data || []}
         renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        keyExtractor={keyExtractor}
-        stickySectionHeadersEnabled={false}
+        keyExtractor={(item) =>
+          item?.objectID || item?.id || String(Math.random())
+        }
+        style={styles.list}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={6}
-        maxToRenderPerBatch={6}
-        windowSize={5}
-        removeClippedSubviews={true}
       />
     </View>
   );
@@ -276,41 +270,57 @@ const SalonList = ({ data }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: "'transparent'",
   },
-  sectionHeader: {
-    fontSize: 18,
+  headerContainer: {
+    paddingVertical: 8,
+  },
+  categoriesWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    paddingHorizontal: 16,
+  },
+  categoryTab: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 8,
+    maxWidth: 120,
+  },
+  selectedCategoryTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#9E38EE",
+  },
+  categoryText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  selectedCategoryText: {
+    color: "#9E38EE",
     fontWeight: "bold",
-    color: "#000",
-    marginBottom: 12,
-    marginTop: 12,
+  },
+  list: {
+    width: "100%",
+    padding: 15,
   },
   salonCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.5,
+    elevation: 3,
   },
-  contentContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  leftContent: {
+  cardContent: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
   },
-  salonImage: {
+  profileImage: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    marginRight: 12,
+    borderRadius: 40,
+    marginRight: 15,
   },
   placeholderImage: {
     backgroundColor: "#E0E0E0",
@@ -321,31 +331,28 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "#666",
   },
-  salonInfo: {
+  textContent: {
     flex: 1,
   },
   salonName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
   },
   location: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   categories: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 12,
+    color: "#888",
   },
   favoriteButton: {
     padding: 8,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
   },
   emptyContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 20,

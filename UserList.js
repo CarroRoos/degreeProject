@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.5,
     elevation: 3,
   },
   cardContent: {
@@ -179,12 +179,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
   },
   location: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
     marginBottom: 4,
   },
