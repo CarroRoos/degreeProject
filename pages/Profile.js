@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: "bold",
     marginTop: 20,
   },
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
   },
   scissorsContainer: {
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   stylistButtonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 14,
   },
   bottomButtonContainer: {
     width: "40%",

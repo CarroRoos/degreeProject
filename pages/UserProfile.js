@@ -42,8 +42,14 @@ function UserProfile({ route, navigation }) {
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
   const isFavorite = userFavorites.some((fav) => fav.uid === userId);
-  const favoriteCount = favoriteCounts[userId] || 0;
+  const [localFavoriteCount, setLocalFavoriteCount] = useState(
+    favoriteCounts[userId] || 0
+  );
   const isOwnProfile = auth.currentUser?.uid === userId;
+
+  useEffect(() => {
+    setLocalFavoriteCount(favoriteCounts[userId] || 0);
+  }, [favoriteCounts, userId]);
 
   const loadUserData = async (userId) => {
     try {
@@ -108,6 +114,7 @@ function UserProfile({ route, navigation }) {
           userId: userId,
         })
       );
+      setLocalFavoriteCount((prev) => prev - 1);
     } else {
       const userObject = {
         uid: user.id,
@@ -121,6 +128,7 @@ function UserProfile({ route, navigation }) {
           favoriteUser: userObject,
         })
       );
+      setLocalFavoriteCount((prev) => prev + 1);
     }
   };
 
@@ -156,7 +164,7 @@ function UserProfile({ route, navigation }) {
               {isOwnProfile ? (
                 <View style={styles.heartContainer}>
                   <Icon name="heart" size={24} color="#9E38EE" />
-                  <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+                  <Text style={styles.favoriteCount}>{localFavoriteCount}</Text>
                 </View>
               ) : (
                 <TouchableOpacity
@@ -168,7 +176,7 @@ function UserProfile({ route, navigation }) {
                     size={24}
                     color="#9E38EE"
                   />
-                  <Text style={styles.favoriteCount}>{favoriteCount}</Text>
+                  <Text style={styles.favoriteCount}>{localFavoriteCount}</Text>
                 </TouchableOpacity>
               )}
             </View>

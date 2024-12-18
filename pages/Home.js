@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultHeader: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#000",
     marginHorizontal: 16,

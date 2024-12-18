@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: "bold",
     marginTop: 20,
   },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   info: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#555",
     marginBottom: 10,
   },

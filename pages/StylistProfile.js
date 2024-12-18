@@ -230,9 +230,12 @@ function StylistProfile({ route, navigation }) {
         </View>
 
         <Text style={styles.sectionTitle}>Plats:</Text>
-        <Text style={styles.placeText}>Karlaplan 12, {stylist.distance} m</Text>
         <View style={styles.mapPlaceholder}>
-          <Text>Karta här</Text>
+          <MaterialCommunityIcons
+            name="compass-outline"
+            size={80}
+            color="#aaa"
+          />
         </View>
 
         <Text style={styles.sectionTitle}>Utvalda hårbilder</Text>
@@ -317,6 +320,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
+    marginBottom: 25,
+    marginTop: -50,
   },
   bookingSection: {
     padding: 20,
@@ -326,7 +331,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     marginHorizontal: 15,
-    marginTop: -5,
+    marginTop: 6,
+    marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -338,7 +344,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bookingDate: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#fff",
     fontWeight: "bold",
     marginRight: 10,
@@ -372,7 +378,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -386,7 +392,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   roleText: {
-    fontSize: 21,
+    fontSize: 18,
     color: "#555",
     marginRight: 10,
   },
@@ -406,7 +412,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     paddingHorizontal: 20,
     marginTop: 20,
     fontWeight: "bold",
@@ -476,7 +482,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   homeServiceText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#555",
     lineHeight: 20,
     marginHorizontal: 20,
@@ -487,7 +493,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     marginBottom: 20,
-    marginTop: -40,
+    marginTop: -70,
     marginRight: 20,
   },
   iconItem: {
@@ -498,6 +504,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#555",
     marginTop: 5,
+  },
+  mapPlaceholder: {
+    backgroundColor: "#f5f5f5",
+    height: 160,
+    marginHorizontal: 20,
+    marginTop: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
 });
 

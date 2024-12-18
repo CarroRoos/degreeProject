@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#fff",
     marginBottom: 20,
@@ -380,6 +380,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     gap: 25,
+    marginTop: 80,
   },
   typeButton: {
     backgroundColor: "#fff",

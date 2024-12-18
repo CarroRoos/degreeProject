@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
   },
   uploadedBadge: {
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   uploadedText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
   },
   buttonContainer: {
