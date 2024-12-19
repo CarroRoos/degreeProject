@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   headerTop: {
-    backgroundColor: "#7904D4",
+    backgroundColor: "#9E38EE",
     height: 70,
   },
   header: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: "bold",
     marginTop: 20,
   },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
   },

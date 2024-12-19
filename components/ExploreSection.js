@@ -120,14 +120,35 @@ function ExploreSection({ navigation }) {
       ? item.time.toString().padStart(2, "0")
       : "00";
 
+    const handleBookPress = (event) => {
+      event.stopPropagation();
+      navigation.navigate("StylistProfile", {
+        stylist: {
+          id: item.id,
+          name: item.stylist,
+          salon: item.salon,
+          ratings: item.ratings || "5.0",
+          image: item.image,
+          price: item.price || "N/A",
+          time: formattedTime,
+          treatment: item.treatment || "Okänd behandling",
+          distance: item.distance || "0",
+        },
+      });
+    };
+
     return (
-      <View key={item.id} style={styles.timeCard}>
+      <TouchableOpacity
+        key={item.id}
+        style={styles.timeCard}
+        onPress={() => handleCardPress(item)}
+      >
         <View style={styles.imageContainer}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.stylistImage} />
           ) : (
             <View style={styles.placeholderImage}>
-              <MaterialIcons name="image" size={24} color="#888" />
+              <MaterialIcons name="person" size={24} color="#888" />
             </View>
           )}
           <View style={styles.ratingContainer}>
@@ -148,21 +169,7 @@ function ExploreSection({ navigation }) {
             <View style={styles.rightAlignedContainer}>
               <TouchableOpacity
                 style={styles.bookButton}
-                onPress={() =>
-                  navigation.navigate("StylistProfile", {
-                    stylist: {
-                      id: item.id,
-                      name: item.stylist,
-                      salon: item.salon,
-                      ratings: item.ratings || "5.0",
-                      image: item.image,
-                      price: item.price || "N/A",
-                      time: formattedTime,
-                      treatment: item.treatment || "Okänd behandling",
-                      distance: item.distance || "0",
-                    },
-                  })
-                }
+                onPress={handleBookPress}
               >
                 <Text style={styles.bookButtonText}>Boka</Text>
               </TouchableOpacity>
@@ -171,7 +178,7 @@ function ExploreSection({ navigation }) {
           </View>
           <Text style={styles.stylistText}>{item.salon}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -416,7 +423,7 @@ const styles = StyleSheet.create({
   placeholderImage: {
     width: 60,
     height: 60,
-    borderRadius: 25,
+    borderRadius: 50,
     backgroundColor: "#F0F0F0",
     justifyContent: "center",
     alignItems: "center",

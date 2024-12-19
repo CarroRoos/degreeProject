@@ -500,11 +500,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 10,
   },
-  iconText: {
-    fontSize: 12,
-    color: "#555",
-    marginTop: 5,
-  },
   mapPlaceholder: {
     backgroundColor: "#f5f5f5",
     height: 160,

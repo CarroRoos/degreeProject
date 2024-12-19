@@ -118,10 +118,6 @@ export default function LoginScreen({ navigation }) {
           />
         </View>
 
-        <TouchableOpacity>
-          <Text style={styles.forgotText}>Glömt mitt lösenord</Text>
-        </TouchableOpacity>
-
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.loginButton, isLoading && styles.disabledButton]}
@@ -181,13 +177,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
   },
-  forgotText: {
-    color: "#fff",
-    fontSize: 14,
-    textAlign: "center",
-    marginVertical: 10,
-    textDecorationLine: "underline",
-  },
+
   buttonContainer: {
     flex: 1,
     justifyContent: "flex-end",

@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   headerTop: {
-    backgroundColor: "#7904D4",
+    backgroundColor: "#9E38EE",
     height: 70,
   },
   header: {
@@ -402,33 +402,30 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   editButton: {
-    backgroundColor: "#9E38EE",
     paddingVertical: 12,
     borderRadius: 8,
     width: "100%",
     alignItems: "center",
   },
   shareButton: {
-    backgroundColor: "#9E38EE",
     paddingVertical: 12,
     borderRadius: 8,
     width: "100%",
     alignItems: "center",
   },
   logoutButton: {
-    backgroundColor: "#9E38EE",
     paddingVertical: 12,
     borderRadius: 8,
     width: "100%",
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: "#9E38EE",
     fontWeight: "bold",
     fontSize: 14,
   },
   logoutButtonText: {
-    color: "#fff",
+    color: "#9E38EE",
     fontWeight: "bold",
     fontSize: 14,
   },

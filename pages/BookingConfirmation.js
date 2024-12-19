@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useDispatch } from "react-redux";
 import { addBooking } from "../slices/bookingsSlice";
 import Footer from "../components/Footer";
@@ -49,42 +55,54 @@ function BookingConfirmation({ navigation, route }) {
         <MaterialCommunityIcons name="chevron-left" size={30} color="#000" />
       </TouchableOpacity>
 
-      <View style={styles.iconContainer}>
-        <MaterialCommunityIcons name="check-circle" size={70} color="#9E38EE" />
-      </View>
-
-      <Text style={styles.heading}>Bokning klar!</Text>
-      <Text style={styles.subheading}>
-        Vi ses kl {bookingTime} {bookingDate}
-      </Text>
-
-      <Text style={styles.bookingDetails}>
-        {stylist.treatment || "Klippning"} - {stylist.price || ""}kr
-      </Text>
-      <Text style={styles.bookingDetails}>
-        {stylist.name} på {stylist.salon}
-      </Text>
-
-      <View style={styles.mapContainer}>
-        <Image
-          source={{ uri: "https://via.placeholder.com/300x150" }}
-          style={styles.mapImage}
-        />
-      </View>
-
-      <TouchableOpacity
-        style={styles.calendarButton}
-        onPress={handleAddToCalendar}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.calendarButtonText}>Lägg till i min kalender</Text>
-      </TouchableOpacity>
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons
+            name="check-circle"
+            size={70}
+            color="#9E38EE"
+          />
+        </View>
 
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => navigation.navigate("Home")}
-      >
-        <Text style={styles.closeButtonText}>Stäng</Text>
-      </TouchableOpacity>
+        <Text style={styles.heading}>Bokning klar!</Text>
+        <Text style={styles.subheading}>
+          Vi ses kl {bookingTime} {bookingDate}
+        </Text>
+
+        <Text style={styles.bookingDetails}>
+          {stylist.treatment || "Klippning"} - {stylist.price || ""}kr
+        </Text>
+        <Text style={styles.bookingDetails}>
+          {stylist.name} på {stylist.salon}
+        </Text>
+
+        <View style={styles.mapPlaceholder}>
+          <MaterialCommunityIcons
+            name="compass-outline"
+            size={80}
+            color="#aaa"
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.calendarButton}
+          onPress={handleAddToCalendar}
+        >
+          <Text style={styles.calendarButtonText}>
+            Lägg till i min kalender
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.navigate("Home")}
+        >
+          <Text style={styles.closeButtonText}>Stäng</Text>
+        </TouchableOpacity>
+      </ScrollView>
 
       <Footer />
       <Toast />
@@ -96,17 +114,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: 100,
   },
   backButton: {
     position: "absolute",
-    top: 20,
+    top: 60,
     left: 10,
+    zIndex: 1,
+  },
+  scrollContent: {
+    alignItems: "center",
+    paddingTop: 120,
+    paddingBottom: 20,
   },
   iconContainer: {
-    marginTop: 50,
     marginBottom: 20,
     alignItems: "center",
   },
@@ -126,17 +146,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
     marginBottom: 5,
-  },
-  mapContainer: {
-    width: "90%",
-    height: 150,
-    borderRadius: 10,
-    overflow: "hidden",
-    marginVertical: 30,
-  },
-  mapImage: {
-    width: "100%",
-    height: "100%",
   },
   calendarButton: {
     backgroundColor: "#E6D9FC",
@@ -163,6 +172,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  mapPlaceholder: {
+    backgroundColor: "#f5f5f5",
+    height: 150,
+    width: "80%",
+    marginVertical: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
 });
 

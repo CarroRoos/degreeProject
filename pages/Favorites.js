@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   headerTop: {
-    backgroundColor: "#7904D4",
+    backgroundColor: "#9E38EE",
     height: 70,
   },
   header: {
