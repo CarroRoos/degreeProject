@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,7 +18,17 @@ import {
 } from "./slices/salonSlice";
 import { auth } from "./config/firebase";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import FastImage from "react-native-fast-image";
+
+const SafeImage = ({ uri, style }) => {
+  const defaultImage = "https://via.placeholder.com/150";
+  return (
+    <Image
+      source={{ uri: uri || defaultImage }}
+      style={style}
+      resizeMode="cover"
+    />
+  );
+};
 
 const SalonCard = React.memo(
   ({ salon, onPress, onFavoritePress, isFavorited, isLoading }) => {
@@ -30,23 +41,14 @@ const SalonCard = React.memo(
 
     if (!salon) return null;
 
+    const imageUri =
+      salon.image && typeof salon.image === "string" ? salon.image : null;
+
     return (
       <View style={styles.salonCard}>
         <TouchableOpacity onPress={() => onPress(salon)}>
           <View style={styles.cardContent}>
-            {salon.image ? (
-              <FastImage
-                source={{ uri: salon.image }}
-                style={styles.profileImage}
-                resizeMode={FastImage.resizeMode.cover}
-              />
-            ) : (
-              <View style={[styles.profileImage, styles.placeholderImage]}>
-                <Text style={styles.placeholderText}>
-                  {salon.salon?.charAt(0) || "S"}
-                </Text>
-              </View>
-            )}
+            <SafeImage uri={imageUri} style={styles.profileImage} />
             <View style={styles.textContent}>
               <Text style={styles.salonName}>
                 {salon._highlightResult?.stylist?.value || salon.stylist}

@@ -297,12 +297,14 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   placeholderImage: {
-    width: "100%",
+    width: 200,
     height: 200,
-    resizeMode: "contain",
-    marginBottom: 40,
+    resizeMode: "cover",
+    marginBottom: 70,
     marginTop: 90,
     backgroundColor: "#fff",
+    borderRadius: 100,
+    alignSelf: "center",
   },
   header: {
     alignItems: "flex-start",
