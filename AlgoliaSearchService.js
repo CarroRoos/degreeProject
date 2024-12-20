@@ -23,6 +23,7 @@ const search = async (query, options = {}) => {
         "ratings",
         "image",
       ],
+      attributesToHighlight: [],
       ...options,
     };
 
@@ -54,6 +55,7 @@ const search = async (query, options = {}) => {
             "location",
             "categories",
           ],
+          attributesToHighlight: [],
         }),
       }),
     ]);
@@ -62,6 +64,14 @@ const search = async (query, options = {}) => {
       salonResponse.json(),
       userResponse.json(),
     ]);
+
+    if (!salonData.hits?.length && !userData.hits?.length) {
+      return {
+        salongerResults: [],
+        usersResults: [],
+        error: "Inga resultat",
+      };
+    }
 
     return {
       salongerResults: salonData.hits || [],
@@ -73,7 +83,7 @@ const search = async (query, options = {}) => {
     return {
       salongerResults: [],
       usersResults: [],
-      error: error.message,
+      error: "Inga resultat",
     };
   }
 };

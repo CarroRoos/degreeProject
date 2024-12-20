@@ -97,7 +97,7 @@ function Home({ navigation }) {
             : {}),
         };
 
-        const { salongerResults, usersResults, currentTime } =
+        const { salongerResults, usersResults, currentTime, error } =
           await algoliaSearch.search(query, searchOptions);
 
         dispatch(setFilteredSalons(salongerResults));
@@ -139,6 +139,17 @@ function Home({ navigation }) {
 
   const renderItem = useCallback(() => {
     if (!searchQuery.trim() || loading) return null;
+
+    if (
+      (!filteredList || filteredList.length === 0) &&
+      (!filteredUsers || filteredUsers.length === 0)
+    ) {
+      return (
+        <View style={styles.noResultsContainer}>
+          <Text style={styles.noResultsText}>Inga resultat hittades</Text>
+        </View>
+      );
+    }
 
     return (
       <View>
@@ -224,40 +235,6 @@ const styles = StyleSheet.create({
   icon: {
     marginLeft: 10,
   },
-  sortSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#f4f4f4",
-  },
-  sortOptions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  sortOption: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    marginBottom: 20,
-  },
-  activeSortOption: {
-    backgroundColor: "#AF43F2",
-  },
-  activeSortOptionText: {
-    color: "#fff",
-  },
-  sortOptionText: {
-    fontSize: 16,
-    color: "#000",
-  },
   resultSection: {
     flex: 1,
   },
@@ -278,6 +255,17 @@ const styles = StyleSheet.create({
   loadingText: {
     textAlign: "center",
     marginTop: 50,
+  },
+  noResultsContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 50,
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: "#000",
+    textAlign: "center",
   },
 });
 

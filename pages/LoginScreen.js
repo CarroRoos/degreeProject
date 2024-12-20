@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { doc, getDoc } from "firebase/firestore";
@@ -92,50 +94,52 @@ export default function LoginScreen({ navigation }) {
       end={{ x: 0.5, y: 1 }}
       style={styles.gradientBackground}
     >
-      <View style={styles.container}>
-        <View>
-          <Text style={styles.title}>Hej! ✄</Text>
-          <Text style={styles.subtitle}>Logga in på ditt konto</Text>
-        </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <View>
+            <Text style={styles.title}>Hej! ✄</Text>
+            <Text style={styles.subtitle}>Logga in på ditt konto</Text>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="E-postadress"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Lösenord"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="E-postadress"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Lösenord"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.loginButton, isLoading && styles.disabledButton]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? "Loggar in..." : "Logga in"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.altButton}
-            onPress={() => navigation.navigate("CreateAccount")}
-          >
-            <Text style={styles.altButtonText}>Skapa konto</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.loginButton, isLoading && styles.disabledButton]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.loginButtonText}>
+                {isLoading ? "Loggar in..." : "Logga in"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.altButton}
+              onPress={() => navigation.navigate("CreateAccount")}
+            >
+              <Text style={styles.altButtonText}>Skapa konto</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </LinearGradient>
   );
 }

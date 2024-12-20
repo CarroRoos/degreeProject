@@ -7,6 +7,8 @@ import {
   Text,
   TextInput,
   ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -290,57 +292,62 @@ export default function CreateAccountScreen({ navigation }) {
   );
 
   return (
-    <LinearGradient
-      colors={["#FFFFFF", "#AF43F2", "#000000"]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={styles.gradientBackground}
-    >
-      <ScrollView style={styles.container}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <LinearGradient
+        colors={["#FFFFFF", "#AF43F2", "#000000"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.gradientBackground}
+      >
+        <ScrollView style={styles.container}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
 
-        {!accountType ? (
-          renderAccountTypeSelection()
-        ) : (
-          <View>
-            <Text style={styles.title}>
-              {accountType === "user"
-                ? "Skapa användarkonto"
-                : "Skapa frisörkonto"}
-            </Text>
-            {accountType === "user" ? renderUserForm() : renderStylistForm()}
-          </View>
-        )}
-
-        <View style={styles.buttonContainer}>
-          {accountType && (
-            <TouchableOpacity
-              style={[styles.createButton, isLoading && styles.disabledButton]}
-              onPress={handleCreateAccount}
-              disabled={isLoading}
-            >
-              <Text style={styles.createButtonText}>
-                {isLoading ? "Skapar konto..." : "Skapa konto!"}
+          {!accountType ? (
+            renderAccountTypeSelection()
+          ) : (
+            <View>
+              <Text style={styles.title}>
+                {accountType === "user"
+                  ? "Skapa användarkonto"
+                  : "Skapa frisörkonto"}
               </Text>
-            </TouchableOpacity>
+              {accountType === "user" ? renderUserForm() : renderStylistForm()}
+            </View>
           )}
 
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => navigation.navigate("Login")}
-          >
-            <Text style={styles.loginButtonText}>
-              Har du redan ett konto? Logga in
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+          <View style={styles.buttonContainer}>
+            {accountType && (
+              <TouchableOpacity
+                style={[
+                  styles.createButton,
+                  isLoading && styles.disabledButton,
+                ]}
+                onPress={handleCreateAccount}
+                disabled={isLoading}
+              >
+                <Text style={styles.createButtonText}>
+                  {isLoading ? "Skapar konto..." : "Skapa konto!"}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => navigation.navigate("Login")}
+            >
+              <Text style={styles.loginButtonText}>
+                Har du redan ett konto? Logga in
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </TouchableWithoutFeedback>
   );
 }
 

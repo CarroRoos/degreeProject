@@ -18,24 +18,20 @@ function Bookings() {
 
   const renderBookingCard = ({ item }) => (
     <View style={styles.card}>
-      {/* Bild */}
+      {}
       <Image
         source={{ uri: item.image || "https://via.placeholder.com/300x150" }}
         style={styles.image}
       />
       <View style={styles.cardContent}>
-        {/* Information */}
+        {}
         <Text style={styles.name}>{item.treatment || "Okänd behandling"}</Text>
         <Text style={styles.info}>
           ⭐ {item.ratings || "0"} • {item.reviews || "0"} recensioner •{" "}
           {item.distance || "okänd plats"}
         </Text>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>
-            Kontakta {item.stylist || "okänd stylist"}
-          </Text>
-        </TouchableOpacity>
-        {/* Ta bort-knapp */}
+
+        {}
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => dispatch(removeBooking(item.id))}
@@ -48,7 +44,7 @@ function Bookings() {
 
   return (
     <View style={styles.container}>
-      {/* Header med två lila sektioner */}
+      {}
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
@@ -58,7 +54,7 @@ function Bookings() {
         </View>
       </View>
 
-      {/* Lista */}
+      {}
       {bookings.length > 0 ? (
         <FlatList
           data={bookings}
@@ -74,7 +70,7 @@ function Bookings() {
         </View>
       )}
 
-      {/* Footer */}
+      {}
       <Footer />
     </View>
   );

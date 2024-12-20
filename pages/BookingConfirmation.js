@@ -91,9 +91,7 @@ function BookingConfirmation({ navigation, route }) {
           style={styles.calendarButton}
           onPress={handleAddToCalendar}
         >
-          <Text style={styles.calendarButtonText}>
-            Lägg till i min kalender
-          </Text>
+          <Text style={styles.calendarButtonText}>Lägg till i bokningar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

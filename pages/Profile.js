@@ -26,6 +26,7 @@ function Profile({ navigation }) {
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [favoriteSalon, setFavoriteSalon] = useState(null);
   const [loadingGallery, setLoadingGallery] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const defaultAvatar = "https://i.imgur.com/6VBx3io.png";
 
   const loadUserImages = async (userId) => {
@@ -162,6 +163,50 @@ function Profile({ navigation }) {
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profil</Text>
+
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => setMenuVisible(!menuVisible)}
+          >
+            <Icon name="cog" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {menuVisible && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => {
+                  navigation.navigate("EditProfile");
+                  setMenuVisible(false);
+                }}
+              >
+                <Icon name="image-plus" size={20} style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Lägg till bilder</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => {
+                  navigation.navigate("EditMyProfile");
+                  setMenuVisible(false);
+                }}
+              >
+                <Icon name="account-edit" size={20} style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Redigera profil</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionButton, styles.lastButton]}
+                onPress={() => {
+                  handleLogout();
+                  setMenuVisible(false);
+                }}
+              >
+                <Icon name="logout" size={20} style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Logga ut</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 
@@ -248,29 +293,6 @@ function Profile({ navigation }) {
               >
                 <Text style={styles.stylistButtonText}>Min Frisör</Text>
               </TouchableOpacity>
-
-              <View style={styles.bottomButtonContainer}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => navigation.navigate("EditProfile")}
-                >
-                  <Text style={styles.buttonText}>+ bilder</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.shareButton}
-                  onPress={() => navigation.navigate("EditMyProfile")}
-                >
-                  <Text style={styles.buttonText}>Redigera</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.logoutButton}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.logoutButtonText}>Logga ut</Text>
-                </TouchableOpacity>
-              </View>
             </>
           }
           contentContainerStyle={styles.flatListContent}
@@ -301,6 +323,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#9E38EE",
     paddingBottom: 20,
     alignItems: "center",
+    position: "relative",
+  },
+  settingsButton: {
+    position: "absolute",
+    right: 20,
+    top: 20,
+    zIndex: 1000,
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    backgroundColor: "white",
+    borderRadius: 8,
+    width: 180,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    zIndex: 1000,
   },
   headerTitle: {
     color: "#fff",
@@ -394,40 +440,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 14,
   },
-  bottomButtonContainer: {
-    width: "40%",
-    paddingHorizontal: 20,
-    marginTop: 50,
-    marginBottom: 100,
-    gap: 10,
-  },
-  editButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: "100%",
+  actionButton: {
+    flexDirection: "row",
     alignItems: "center",
+    padding: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#eee",
   },
-  shareButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
+  lastButton: {
+    borderBottomWidth: 0,
   },
-  logoutButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
+  buttonIcon: {
+    marginRight: 12,
+    color: "#9E38EE",
   },
   buttonText: {
-    color: "#9E38EE",
-    fontWeight: "bold",
+    color: "#666",
     fontSize: 14,
-  },
-  logoutButtonText: {
-    color: "#9E38EE",
-    fontWeight: "bold",
-    fontSize: 14,
+    fontWeight: "500",
   },
 });
 

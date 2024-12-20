@@ -151,7 +151,7 @@ function StylistProfile({ route, navigation }) {
         <View style={styles.header}>
           <Text style={styles.stylistInfo}>
             <Text style={styles.stylistName}>{stylist.name} </Text>
-            hos {stylist.salon} ⭐ {stylist.ratings}
+            hos {stylist.salon}
           </Text>
         </View>
 
