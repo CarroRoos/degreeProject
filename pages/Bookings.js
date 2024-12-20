@@ -13,25 +13,22 @@ import { removeBooking } from "../slices/bookingsSlice";
 
 function Bookings() {
   const dispatch = useDispatch();
-
   const bookings = useSelector((state) => state.bookings || []);
 
   const renderBookingCard = ({ item }) => (
     <View style={styles.card}>
-      {}
-      <Image
-        source={{ uri: item.image || "https://via.placeholder.com/300x150" }}
-        style={styles.image}
-      />
+      <Image source={{ uri: item.image }} style={styles.image} />
       <View style={styles.cardContent}>
-        {}
-        <Text style={styles.name}>{item.treatment || "Okänd behandling"}</Text>
-        <Text style={styles.info}>
-          ⭐ {item.ratings || "0"} • {item.reviews || "0"} recensioner •{" "}
-          {item.distance || "okänd plats"}
-        </Text>
+        <Text style={styles.name}>{item.stylist}</Text>
+        <Text style={styles.salonInfo}>hos {item.salon}</Text>
 
-        {}
+        <View style={styles.bookingDetails}>
+          <Text style={styles.timePrice}>
+            {item.time} • {item.price} kr
+          </Text>
+          <Text style={styles.dateText}>{item.date}</Text>
+        </View>
+
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => dispatch(removeBooking(item.id))}
@@ -44,7 +41,6 @@ function Bookings() {
 
   return (
     <View style={styles.container}>
-      {}
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
@@ -54,7 +50,6 @@ function Bookings() {
         </View>
       </View>
 
-      {}
       {bookings.length > 0 ? (
         <FlatList
           data={bookings}
@@ -70,13 +65,10 @@ function Bookings() {
         </View>
       )}
 
-      {}
       <Footer />
     </View>
   );
 }
-
-export default Bookings;
 
 const styles = StyleSheet.create({
   container: {
@@ -118,34 +110,46 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 3,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
   },
   image: {
-    width: "100%",
-    height: 150,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 15,
   },
   cardContent: {
-    padding: 15,
+    flex: 1,
+    padding: 0,
   },
   name: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
+    textAlign: "left",
   },
-  info: {
+  salonInfo: {
     fontSize: 16,
-    color: "#555",
+    color: "#666",
     marginBottom: 10,
+    textAlign: "left",
   },
-  button: {
-    backgroundColor: "#9E38EE",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
+  bookingDetails: {
+    marginTop: 5,
+    marginBottom: 10,
+    alignItems: "flex-start",
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  timePrice: {
     fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  dateText: {
+    fontSize: 14,
+    color: "#666",
   },
   removeButton: {
     marginTop: 10,
@@ -171,3 +175,5 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
 });
+
+export default Bookings;

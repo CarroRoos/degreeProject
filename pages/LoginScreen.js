@@ -42,23 +42,10 @@ export default function LoginScreen({ navigation }) {
       }
 
       const userData = userDoc.data();
-      dispatch(setCurrentUser(userCredential.user.uid));
+      await dispatch(setCurrentUser(userCredential.user.uid));
 
-      Alert.alert(
-        "Välkommen!",
-        ` ${userData.displayName || userCredential.user.email}! 💜`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              if (userData.accountType === "stylist") {
-                navigation.replace("HomeStylist");
-              } else {
-                navigation.replace("Home");
-              }
-            },
-          },
-        ]
+      navigation.replace(
+        userData.accountType === "stylist" ? "HomeStylist" : "Home"
       );
     } catch (error) {
       let errorMessage = "Ett fel inträffade vid inloggning";
@@ -181,7 +168,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
   },
-
   buttonContainer: {
     flex: 1,
     justifyContent: "flex-end",

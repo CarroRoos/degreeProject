@@ -27,17 +27,16 @@ function StylistProfile({ route, navigation }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const gallery = [
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
+    require("../assets/images/stylist.png"),
+    require("../assets/images/stylist1.png"),
+    require("../assets/images/stylist2.png"),
+    require("../assets/images/stylist3.png"),
   ];
-
   const customerGallery = [
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
-    "https://via.placeholder.com/150",
+    require("../assets/images/stylist.png"),
+    require("../assets/images/stylist1.png"),
+    require("../assets/images/stylist2.png"),
+    require("../assets/images/stylist3.png"),
   ];
 
   useEffect(() => {
@@ -229,22 +228,13 @@ function StylistProfile({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>Plats:</Text>
-        <View style={styles.mapPlaceholder}>
-          <MaterialCommunityIcons
-            name="compass-outline"
-            size={80}
-            color="#aaa"
-          />
-        </View>
-
         <Text style={styles.sectionTitle}>Utvalda hårbilder</Text>
         <FlatList
           data={gallery}
           horizontal
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
-            <Image source={{ uri: item }} style={styles.galleryImage} />
+            <Image source={item} style={styles.galleryImage} />
           )}
         />
 
@@ -254,7 +244,7 @@ function StylistProfile({ route, navigation }) {
           horizontal
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
-            <Image source={{ uri: item }} style={styles.galleryImage} />
+            <Image source={item} style={styles.galleryImage} />
           )}
         />
         <TouchableOpacity

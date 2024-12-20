@@ -79,14 +79,6 @@ function BookingConfirmation({ navigation, route }) {
           {stylist.name} på {stylist.salon}
         </Text>
 
-        <View style={styles.mapPlaceholder}>
-          <MaterialCommunityIcons
-            name="compass-outline"
-            size={80}
-            color="#aaa"
-          />
-        </View>
-
         <TouchableOpacity
           style={styles.calendarButton}
           onPress={handleAddToCalendar}
@@ -127,11 +119,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: 20,
     alignItems: "center",
+    marginTop: 100,
   },
   heading: {
     fontSize: 30,
     fontWeight: "bold",
     marginBottom: 30,
+    marginTop: 30,
     color: "#000",
   },
   subheading: {
@@ -150,6 +144,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 25,
     marginBottom: 15,
+    marginTop: 50,
     width: "80%",
     alignItems: "center",
   },
