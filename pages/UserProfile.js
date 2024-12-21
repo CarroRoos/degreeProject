@@ -14,6 +14,7 @@ import {
   addUserFavorite,
   removeUserFavorite,
   loadUserFavoriteCount,
+  loadUserFavorites,
 } from "../slices/userSlice";
 import Footer from "../components/Footer";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -26,6 +27,7 @@ import {
   where,
   getDocs,
   collection,
+  setDoc,
 } from "firebase/firestore";
 
 function UserProfile({ route, navigation }) {
@@ -46,6 +48,13 @@ function UserProfile({ route, navigation }) {
     favoriteCounts[userId] || 0
   );
   const isOwnProfile = auth.currentUser?.uid === userId;
+
+  // Load favorites when component mounts
+  useEffect(() => {
+    if (currentUserId) {
+      dispatch(loadUserFavorites(currentUserId));
+    }
+  }, [currentUserId, dispatch]);
 
   useEffect(() => {
     setLocalFavoriteCount(favoriteCounts[userId] || 0);
@@ -95,7 +104,7 @@ function UserProfile({ route, navigation }) {
     }
   };
 
-  const handleFavoritePress = () => {
+  const handleFavoritePress = async () => {
     if (!currentUserId) {
       Alert.alert(
         "Logga in",
@@ -107,28 +116,56 @@ function UserProfile({ route, navigation }) {
 
     if (!user || isOwnProfile) return;
 
-    if (isFavorite) {
-      dispatch(
-        removeUserFavorite({
-          currentUserId: currentUserId,
-          userId: userId,
-        })
-      );
-      setLocalFavoriteCount((prev) => prev - 1);
-    } else {
-      const userObject = {
-        uid: user.id,
-        displayName: user.displayName || user.email,
-        photoURL: user.photoURL,
-        location: user.location,
-      };
-      dispatch(
-        addUserFavorite({
-          currentUserId: currentUserId,
-          favoriteUser: userObject,
-        })
-      );
-      setLocalFavoriteCount((prev) => prev + 1);
+    try {
+      const userFavoritesRef = doc(db, "userFavorites", currentUserId);
+
+      if (isFavorite) {
+        // Remove from favorites
+        dispatch(
+          removeUserFavorite({
+            currentUserId: currentUserId,
+            userId: userId,
+          })
+        );
+        setLocalFavoriteCount((prev) => prev - 1);
+
+        // Update in Firestore
+        const currentFavorites = userFavorites.filter(
+          (fav) => fav.uid !== userId
+        );
+        await setDoc(
+          userFavoritesRef,
+          { favorites: currentFavorites },
+          { merge: true }
+        );
+      } else {
+        // Add to favorites
+        const userObject = {
+          uid: user.id,
+          displayName: user.displayName || user.email,
+          photoURL: user.photoURL,
+          location: user.location,
+        };
+
+        dispatch(
+          addUserFavorite({
+            currentUserId: currentUserId,
+            favoriteUser: userObject,
+          })
+        );
+        setLocalFavoriteCount((prev) => prev + 1);
+
+        // Update in Firestore
+        const currentFavorites = [...userFavorites, userObject];
+        await setDoc(
+          userFavoritesRef,
+          { favorites: currentFavorites },
+          { merge: true }
+        );
+      }
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+      Alert.alert("Fel", "Kunde inte uppdatera favoriter");
     }
   };
 
@@ -320,12 +357,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     width: "100%",
     marginBottom: 10,
-  },
-  scissorIcon: {
-    marginTop: 30,
-    width: 40,
-    height: 40,
-    tintColor: (iconName) => (iconName === "scissors2" ? "#9E38EE" : "black"),
   },
   galleryContainer: {
     paddingHorizontal: 5,

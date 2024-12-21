@@ -15,29 +15,40 @@ function Bookings() {
   const dispatch = useDispatch();
   const bookings = useSelector((state) => state.bookings || []);
 
-  const renderBookingCard = ({ item }) => (
-    <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <View style={styles.cardContent}>
-        <Text style={styles.name}>{item.stylist}</Text>
-        <Text style={styles.salonInfo}>hos {item.salon}</Text>
+  const renderBookingCard = ({ item }) => {
+    const formatTime = (time) => {
+      if (!time) return "00:00";
+      const timeStr = time.toString();
 
-        <View style={styles.bookingDetails}>
-          <Text style={styles.timePrice}>
-            {item.time} • {item.price} kr
-          </Text>
-          <Text style={styles.dateText}>{item.date}</Text>
+      if (timeStr.includes(":")) return timeStr;
+
+      const hours = timeStr.substring(0, 2);
+      const minutes = timeStr.substring(2, 4);
+      return `${hours}:${minutes}`;
+    };
+
+    return (
+      <View style={styles.card}>
+        <Image source={{ uri: item.image }} style={styles.image} />
+        <View style={styles.cardContent}>
+          <Text style={styles.name}>{item.stylist}</Text>
+          <Text style={styles.salonInfo}>hos {item.salon}</Text>
+          <View style={styles.bookingDetails}>
+            <Text style={styles.timePrice}>
+              Kl: {formatTime(item.time)} • {item.price} kr
+            </Text>
+            <Text style={styles.dateText}>{item.date}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={() => dispatch(removeBooking(item.id))}
+          >
+            <Text style={styles.removeButtonText}>Ta bort</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => dispatch(removeBooking(item.id))}
-        >
-          <Text style={styles.removeButtonText}>Ta bort</Text>
-        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>

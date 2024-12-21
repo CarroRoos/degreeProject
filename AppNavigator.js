@@ -6,15 +6,17 @@ import {
 import { createStackNavigator } from "@react-navigation/stack";
 import { useDispatch } from "react-redux";
 import { loadFavorites } from "./slices/salonSlice";
-import { auth } from "./config/firebase";
+import { auth, db } from "./config/firebase";
 import {
   ActivityIndicator,
   View,
   TouchableOpacity,
   StyleSheet,
   Image,
+  Text,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 import BookingConfirmation from "./pages/BookingConfirmation";
 import Bookings from "./pages/Bookings";
@@ -29,10 +31,12 @@ import Profile from "./pages/Profile";
 import QuestionnaireScreen from "./pages/QuestionnaireScreen";
 import StylistProfile from "./pages/StylistProfile";
 import UserProfile from "./pages/UserProfile";
+
 const Stack = createStackNavigator();
 
 const StaticFooter = ({ navigationRef }) => {
   const [currentRoute, setCurrentRoute] = useState("Home");
+  const [favoritesCount, setFavoritesCount] = useState(0);
 
   useEffect(() => {
     const unsubscribe = navigationRef.current?.addListener("state", () => {
@@ -43,6 +47,28 @@ const StaticFooter = ({ navigationRef }) => {
     });
 
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    const favoritesQuery = query(
+      collection(db, "favorites"),
+      where("userId", "==", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      favoritesQuery,
+      (snapshot) => {
+        setFavoritesCount(snapshot.size);
+      },
+      (error) => {
+        console.error("Error listening to favorites:", error);
+      }
+    );
+
+    return () => unsubscribe();
   }, []);
 
   const navigate = (routeName) => {
@@ -71,6 +97,11 @@ const StaticFooter = ({ navigationRef }) => {
           size={35}
           color={currentRoute === "Favorites" ? "#9E38EE" : "#000"}
         />
+        {favoritesCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{String(favoritesCount)}</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -193,6 +224,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     paddingBottom: 20,
+  },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -10,
+    backgroundColor: "#9E38EE",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   profileImage: {
     width: 35,

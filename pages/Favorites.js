@@ -171,9 +171,7 @@ function Favorites() {
             </Text>
             <Text style={styles.info}>
               {isSalon
-                ? `${item.treatment || "Behandling"} • ${
-                    item.distance || "Avstånd"
-                  }`
+                ? item.salon || "Salong ej angiven"
                 : item.location || "Plats ej angiven"}
             </Text>
           </View>

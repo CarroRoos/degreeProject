@@ -42,12 +42,16 @@ export default function LoginScreen({ navigation }) {
       }
 
       const userData = userDoc.data();
-      await dispatch(setCurrentUser(userCredential.user.uid));
 
-      navigation.replace(
-        userData.accountType === "stylist" ? "HomeStylist" : "Home"
-      );
+      dispatch(setCurrentUser(userCredential.user.uid));
+
+      setTimeout(() => {
+        navigation.navigate(
+          userData.accountType === "stylist" ? "HomeStylist" : "Home"
+        );
+      }, 100);
     } catch (error) {
+      console.error("Login error:", error);
       let errorMessage = "Ett fel inträffade vid inloggning";
 
       switch (error.code) {

@@ -91,14 +91,19 @@ function ExploreSection({ navigation }) {
 
     fetchAvailableTimes();
   }, [userLocation]);
+  const formatTime = (time) => {
+    if (!time) return "00:00";
+    const timeStr = time.toString();
+    const hours = timeStr.substring(0, 2);
+    const minutes = timeStr.substring(2, 4);
+    return `${hours}:${minutes}`;
+  };
 
   const handleCardPress = (item) => {
     if (!navigation) {
       console.error("Navigation is undefined");
       return;
     }
-
-    const formattedTime = item.time.toString().padStart(2, "0");
 
     navigation.navigate("StylistProfile", {
       stylist: {
@@ -108,7 +113,7 @@ function ExploreSection({ navigation }) {
         ratings: item.ratings,
         image: item.image,
         price: item.price,
-        time: formattedTime,
+        time: formatTime(item.time),
         treatment: item.treatment,
         distance: item.distance,
       },
@@ -116,10 +121,6 @@ function ExploreSection({ navigation }) {
   };
 
   const renderTimeCard = (item) => {
-    const formattedTime = item.time
-      ? item.time.toString().padStart(2, "0")
-      : "00";
-
     const handleBookPress = (event) => {
       event.stopPropagation();
       navigation.navigate("StylistProfile", {
@@ -130,7 +131,7 @@ function ExploreSection({ navigation }) {
           ratings: item.ratings || "5.0",
           image: item.image,
           price: item.price || "N/A",
-          time: formattedTime,
+          time: formatTime(item.time),
           treatment: item.treatment || "Okänd behandling",
           distance: item.distance || "0",
         },
@@ -165,7 +166,7 @@ function ExploreSection({ navigation }) {
           <Text style={styles.salonText}>{item.stylist}</Text>
           <Text style={styles.treatmentText}>{item.treatment}</Text>
           <View style={styles.detailsRow}>
-            <Text style={styles.timeText}>Kl. {formattedTime}:00</Text>
+            <Text style={styles.timeText}>Kl. {formatTime(item.time)}</Text>
             <View style={styles.rightAlignedContainer}>
               <TouchableOpacity
                 style={styles.bookButton}

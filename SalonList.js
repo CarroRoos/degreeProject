@@ -30,6 +30,14 @@ const SafeImage = ({ uri, style }) => {
   );
 };
 
+const formatTime = (time) => {
+  if (!time) return "00:00";
+  const timeStr = time.toString();
+  const hours = timeStr.substring(0, 2);
+  const minutes = timeStr.substring(2, 4);
+  return `${hours}:${minutes}`;
+};
+
 const SalonCard = React.memo(
   ({ salon, onPress, onFavoritePress, isFavorited, isLoading }) => {
     const getTreatmentText = useCallback((salon) => {
@@ -55,7 +63,7 @@ const SalonCard = React.memo(
               </Text>
               <Text style={styles.location}>{salon.salon}</Text>
               <Text style={styles.categories}>
-                {salon.time ? `Kl. ${salon.time}` : "Tid ej angiven"} •{" "}
+                Kl. {formatTime(salon.time)} •{" "}
                 {salon.price ? `${salon.price} kr` : "Pris ej angivet"}
               </Text>
               <Text style={styles.categories}>{getTreatmentText(salon)}</Text>
@@ -106,7 +114,7 @@ const SalonList = ({ data }) => {
         ratings: salon.ratings || "0",
         image: salon.image,
         price: salon.price,
-        time: salon.time,
+        time: formatTime(salon.time),
         treatment: salon.treatment,
         distance: salon.distance || "",
         description: salon.description || "",
@@ -272,7 +280,7 @@ const SalonList = ({ data }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "'transparent'",
+    backgroundColor: "transparent",
   },
   headerContainer: {
     paddingVertical: 8,

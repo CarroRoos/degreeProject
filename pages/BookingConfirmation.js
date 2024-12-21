@@ -12,12 +12,23 @@ import Footer from "../components/Footer";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Toast from "react-native-toast-message";
 
+const formatTime = (time) => {
+  if (!time) return "00:00";
+  const timeStr = time.toString();
+
+  if (timeStr.includes(":")) return timeStr;
+
+  const hours = timeStr.substring(0, 2);
+  const minutes = timeStr.substring(2, 4);
+  return `${hours}:${minutes}`;
+};
+
 function BookingConfirmation({ navigation, route }) {
   const dispatch = useDispatch();
 
   const {
     stylist = {},
-    bookingTime = "okänd tid",
+    bookingTime = "00:00",
     bookingDate = "okänt datum",
   } = route.params || {};
 
@@ -69,7 +80,7 @@ function BookingConfirmation({ navigation, route }) {
 
         <Text style={styles.heading}>Bokning klar!</Text>
         <Text style={styles.subheading}>
-          Vi ses kl {bookingTime} {bookingDate}
+          Vi ses kl {formatTime(bookingTime)} {bookingDate}
         </Text>
 
         <Text style={styles.bookingDetails}>

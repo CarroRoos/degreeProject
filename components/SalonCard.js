@@ -107,7 +107,10 @@ function SalonCard({ salon, navigation }) {
         <Text style={styles.salonName}>{salon.salon}</Text>
         <Text style={styles.treatment}>{salon.treatment}</Text>
         <View style={styles.row}>
-          <Text style={styles.timeText}>Kl. {salon.time}</Text>
+          <Text style={styles.categories}>
+            Kl. {formatTime(salon.time)} •{" "}
+            {salon.price ? `${salon.price} kr` : "Pris ej angivet"}
+          </Text>
           <Text style={styles.bullet}> • </Text>
           <Text style={styles.price}>{salon.price} kr</Text>
         </View>
