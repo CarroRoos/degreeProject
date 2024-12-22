@@ -36,6 +36,11 @@ function ExploreSection({ navigation }) {
     const fetchAvailableTimes = async () => {
       if (!userLocation) return;
 
+      if (availableTimes.length > 0) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
 
@@ -90,7 +95,8 @@ function ExploreSection({ navigation }) {
     };
 
     fetchAvailableTimes();
-  }, [userLocation]);
+  }, [userLocation, availableTimes.length]);
+
   const formatTime = (time) => {
     if (!time) return "00:00";
     const timeStr = time.toString();

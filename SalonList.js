@@ -144,7 +144,6 @@ const SalonList = ({ data }) => {
       }
 
       if (!salon || (!salon.objectID && !salon.id)) {
-        console.error("Invalid salon data:", salon);
         Alert.alert("Fel", "Kunde inte hantera favorit: Ogiltig salongsdata");
         return;
       }
@@ -170,7 +169,6 @@ const SalonList = ({ data }) => {
           ).unwrap();
         }
       } catch (error) {
-        console.error("Error handling favorite:", error);
         Alert.alert("Fel", "Kunde inte uppdatera favorit");
       } finally {
         setLoadingFavorites((prev) => ({ ...prev, [salonId]: false }));
@@ -186,14 +184,42 @@ const SalonList = ({ data }) => {
       (salon) => salon && (salon.objectID || salon.id)
     );
 
-    const currentHour = new Date().getHours();
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
 
     const validTimes = validData.filter((salon) => {
       if (typeof salon.time !== "number") return false;
-      return salon.time > currentHour;
+      const salonHour = Math.floor(salon.time / 100);
+      const salonMinute = salon.time % 100;
+      const salonTimeInMinutes = salonHour * 60 + salonMinute;
+
+      if (salonTimeInMinutes <= currentTimeInMinutes) {
+        return true;
+      }
+      return true;
     });
 
-    const sortedByTime = [...validTimes].sort((a, b) => a.time - b.time);
+    const sortedByTime = [...validTimes].sort((a, b) => {
+      const aHour = Math.floor(a.time / 100);
+      const aMinute = a.time % 100;
+      const bHour = Math.floor(b.time / 100);
+      const bMinute = b.time % 100;
+
+      let aTimeInMinutes = aHour * 60 + aMinute;
+      let bTimeInMinutes = bHour * 60 + bMinute;
+
+      if (aTimeInMinutes <= currentTimeInMinutes) {
+        aTimeInMinutes += 24 * 60;
+      }
+      if (bTimeInMinutes <= currentTimeInMinutes) {
+        bTimeInMinutes += 24 * 60;
+      }
+
+      return aTimeInMinutes - bTimeInMinutes;
+    });
+
     const sortedByPrice = [...validData].sort(
       (a, b) => (a.price || 0) - (b.price || 0)
     );
@@ -331,15 +357,6 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 40,
     marginRight: 15,
-  },
-  placeholderImage: {
-    backgroundColor: "#E0E0E0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  placeholderText: {
-    fontSize: 24,
-    color: "#666",
   },
   textContent: {
     flex: 1,

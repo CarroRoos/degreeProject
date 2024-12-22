@@ -189,7 +189,12 @@ export default function EditProfile({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Lägg till bilder</Text>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{ paddingBottom: 150 }}
+        bounces={true}
+      >
         <View style={styles.imageGrid}>
           {selectedImages.map((image, index) => (
             <View key={index} style={styles.imageContainer}>
@@ -271,6 +276,7 @@ export default function EditProfile({ navigation }) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -288,6 +294,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 15,
+    width: "100%",
   },
   imageGrid: {
     flexDirection: "row",
@@ -366,7 +373,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+    paddingBottom: Platform.OS === "ios" ? 100 : 80,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
@@ -378,6 +385,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4.65,
     elevation: 6,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
   },
   uploadButton: {
     backgroundColor: "#9E38EE",

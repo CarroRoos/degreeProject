@@ -25,6 +25,9 @@ const search = async (query, options = {}) => {
       ],
       attributesToHighlight: [],
       ...options,
+      getRankingInfo: true,
+      analytics: true,
+      clickAnalytics: true,
     };
 
     const [salonResponse, userResponse] = await Promise.all([
@@ -65,7 +68,9 @@ const search = async (query, options = {}) => {
       userResponse.json(),
     ]);
 
-    if (!salonData.hits?.length && !userData.hits?.length) {
+    let salongerResults = salonData.hits || [];
+
+    if (!salongerResults.length && !userData.hits?.length) {
       return {
         salongerResults: [],
         usersResults: [],
@@ -74,12 +79,11 @@ const search = async (query, options = {}) => {
     }
 
     return {
-      salongerResults: salonData.hits || [],
+      salongerResults,
       usersResults: userData.hits || [],
       error: null,
     };
   } catch (error) {
-    console.error("Search error:", error);
     return {
       salongerResults: [],
       usersResults: [],
@@ -109,9 +113,34 @@ const updateUser = async (userId, userData) => {
 
     return await response.json();
   } catch (error) {
-    console.error("Algolia update error:", error);
     throw error;
   }
 };
 
-export default { search, updateUser };
+const reindexSalon = async (salonId, salonData) => {
+  try {
+    const response = await fetch(`${ALGOLIA_BASE_URL}/salonger/${salonId}`, {
+      method: "PUT",
+      headers: {
+        "X-Algolia-API-Key": ALGOLIA_API_KEY,
+        "X-Algolia-Application-Id": ALGOLIA_APP_ID,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        objectID: salonId,
+        ...salonData,
+        _timestamp: Date.now(),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to reindex salon: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+};
+
+export default { search, updateUser, reindexSalon };

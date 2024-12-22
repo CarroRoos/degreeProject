@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useDispatch } from "react-redux";
-import { addBooking } from "../slices/bookingsSlice";
-import Footer from "../components/Footer";
+import { addBookingToFirebase } from "../slices/bookingsSlice";
+import { auth } from "../config/firebase";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Toast from "react-native-toast-message";
 
@@ -25,6 +26,7 @@ const formatTime = (time) => {
 
 function BookingConfirmation({ navigation, route }) {
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
 
   const {
     stylist = {},
@@ -32,29 +34,60 @@ function BookingConfirmation({ navigation, route }) {
     bookingDate = "okänt datum",
   } = route.params || {};
 
-  const handleAddToCalendar = () => {
+  const handleAddToCalendar = async () => {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      Toast.show({
+        type: "error",
+        text1: "Du måste vara inloggad för att boka",
+      });
+      return;
+    }
+
+    if (!stylist.name || !bookingTime || !bookingDate) {
+      Toast.show({
+        type: "error",
+        text1: "Fel",
+        text2: "Alla bokningsfält måste vara ifyllda.",
+      });
+      return;
+    }
+
     const newBooking = {
-      id: Date.now(),
       stylist: stylist.name,
       treatment: stylist.treatment || "Klippning",
       price: stylist.price || "Pris ej angivet",
-      ratings: stylist.ratings || 0,
+      ratings: stylist.ratings || "5.0",
       salon: stylist.salon || "Okänd salong",
       time: bookingTime,
       date: bookingDate,
       distance: stylist.distance || "300 m",
       image: stylist.image || "https://via.placeholder.com/300x150",
+      userId: currentUser.uid,
     };
 
-    dispatch(addBooking(newBooking));
+    console.log("Försöker lägga till bokning:", newBooking);
 
-    Toast.show({
-      type: "success",
-      text1: "Tillagd i bokningar!",
-      text2: `Din bokning hos ${stylist.name || "okänd stylist"} är tillagd.`,
-    });
-
-    navigation.navigate("Bookings");
+    setLoading(true);
+    try {
+      await dispatch(addBookingToFirebase(newBooking));
+      Toast.show({
+        type: "success",
+        text1: "Tillagd i bokningar!",
+        text2: `Din bokning hos ${stylist.name || "okänd stylist"} är tillagd.`,
+      });
+      navigation.navigate("Bookings");
+    } catch (error) {
+      console.error("Error saving booking:", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Kunde inte spara bokningen",
+        text2: "Försök igen senare.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,7 +117,7 @@ function BookingConfirmation({ navigation, route }) {
         </Text>
 
         <Text style={styles.bookingDetails}>
-          {stylist.treatment || "Klippning"} - {stylist.price || ""}kr
+          {stylist.treatment || "Klippning"} - {stylist.price || ""} kr
         </Text>
         <Text style={styles.bookingDetails}>
           {stylist.name} på {stylist.salon}
@@ -93,8 +126,13 @@ function BookingConfirmation({ navigation, route }) {
         <TouchableOpacity
           style={styles.calendarButton}
           onPress={handleAddToCalendar}
+          disabled={loading}
         >
-          <Text style={styles.calendarButtonText}>Lägg till i bokningar</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#9E38EE" />
+          ) : (
+            <Text style={styles.calendarButtonText}>Lägg till i bokningar</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -105,7 +143,6 @@ function BookingConfirmation({ navigation, route }) {
         </TouchableOpacity>
       </ScrollView>
 
-      <Footer />
       <Toast />
     </View>
   );
@@ -176,17 +213,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
-  },
-  mapPlaceholder: {
-    backgroundColor: "#f5f5f5",
-    height: 150,
-    width: "80%",
-    marginVertical: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
   },
 });
 

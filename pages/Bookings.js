@@ -1,5 +1,4 @@
-import React from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,24 +8,99 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Footer from "../components/Footer";
-import { removeBooking } from "../slices/bookingsSlice";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import { db, auth } from "../config/firebase";
+import Toast from "react-native-toast-message";
+import { useDispatch } from "react-redux";
+import { removeBookingFromFirebase } from "../slices/bookingsSlice";
 
 function Bookings() {
+  const [bookings, setBookings] = useState([]);
   const dispatch = useDispatch();
-  const bookings = useSelector((state) => state.bookings || []);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadBookings(user.uid);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const loadBookings = async (userId) => {
+    if (!userId) return;
+
+    try {
+      const bookingsQuery = query(
+        collection(db, "bookings"),
+        where("userId", "==", userId)
+      );
+      const querySnapshot = await getDocs(bookingsQuery);
+      const fetchedBookings = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setBookings(fetchedBookings);
+      console.log("Laddade bokningar:", fetchedBookings);
+    } catch (error) {
+      console.error("Fel vid laddning av bokningar:", error);
+    }
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "00:00";
+    const timeStr = time.toString();
+
+    if (timeStr.includes(":")) return timeStr;
+
+    const hours = timeStr.substring(0, 2);
+    const minutes = timeStr.substring(2, 4);
+    return `${hours}:${minutes}`;
+  };
+
+  const handleRemoveBooking = async (bookingId) => {
+    console.log("Försöker ta bort bokning med ID:", bookingId);
+
+    if (!bookingId) {
+      console.error("Ogiltigt bookingId:", bookingId);
+      Toast.show({
+        type: "error",
+        text1: "Fel",
+        text2: "Boknings-ID saknas eller är ogiltigt.",
+      });
+      return;
+    }
+
+    try {
+      await dispatch(removeBookingFromFirebase(bookingId));
+      setBookings((prevBookings) =>
+        prevBookings.filter((booking) => booking.id !== bookingId)
+      );
+
+      Toast.show({
+        type: "success",
+        text1: "Bokning borttagen",
+        text2: "Din bokning har tagits bort.",
+      });
+    } catch (error) {
+      console.error("Fel vid borttagning av bokning:", error);
+      Toast.show({
+        type: "error",
+        text1: "Kunde inte ta bort bokningen",
+        text2: "Ett oväntat fel inträffade. Försök igen.",
+      });
+    }
+  };
 
   const renderBookingCard = ({ item }) => {
-    const formatTime = (time) => {
-      if (!time) return "00:00";
-      const timeStr = time.toString();
-
-      if (timeStr.includes(":")) return timeStr;
-
-      const hours = timeStr.substring(0, 2);
-      const minutes = timeStr.substring(2, 4);
-      return `${hours}:${minutes}`;
-    };
-
     return (
       <View style={styles.card}>
         <Image source={{ uri: item.image }} style={styles.image} />
@@ -41,7 +115,7 @@ function Bookings() {
           </View>
           <TouchableOpacity
             style={styles.removeButton}
-            onPress={() => dispatch(removeBooking(item.id))}
+            onPress={() => handleRemoveBooking(item.id)}
           >
             <Text style={styles.removeButtonText}>Ta bort</Text>
           </TouchableOpacity>
@@ -55,18 +129,14 @@ function Bookings() {
       <View>
         <View style={styles.headerTop}></View>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Bokningar ({Array.isArray(bookings) ? bookings.length : 0})
-          </Text>
+          <Text style={styles.headerTitle}>Bokningar ({bookings.length})</Text>
         </View>
       </View>
 
       {bookings.length > 0 ? (
         <FlatList
           data={bookings}
-          keyExtractor={(item) =>
-            item.id?.toString() || Math.random().toString()
-          }
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderBookingCard}
           contentContainerStyle={styles.listContent}
         />
@@ -77,6 +147,7 @@ function Bookings() {
       )}
 
       <Footer />
+      <Toast />
     </View>
   );
 }
@@ -178,12 +249,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     color: "#999",
-  },
-  footer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
 });
 
