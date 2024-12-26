@@ -33,10 +33,10 @@ function StylistProfile({ route, navigation }) {
     require("../assets/images/stylist3.png"),
   ];
   const customerGallery = [
-    require("../assets/images/stylist.png"),
-    require("../assets/images/stylist1.png"),
-    require("../assets/images/stylist2.png"),
-    require("../assets/images/stylist3.png"),
+    require("../assets/images/stylist4.png"),
+    require("../assets/images/stylist5.png"),
+    require("../assets/images/stylist6.png"),
+    require("../assets/images/stylist7.png"),
   ];
 
   useEffect(() => {
@@ -238,7 +238,7 @@ function StylistProfile({ route, navigation }) {
           )}
         />
 
-        <Text style={styles.sectionTitle}>Kund: Amira</Text>
+        <Text style={styles.sectionTitle}>Kund: Lisa</Text>
         <FlatList
           data={customerGallery}
           horizontal
@@ -251,11 +251,11 @@ function StylistProfile({ route, navigation }) {
           style={styles.customerButton}
           onPress={() =>
             navigation.navigate("UserProfile", {
-              userId: "BzoYt1Z5EpY4oIqGOLBvYFMllJp1",
+              userId: "faehMHlbS2P5F2FvW7d2Q23KUkI2",
             })
           }
         >
-          <Text style={styles.customerButtonText}>Till Amira</Text>
+          <Text style={styles.customerButtonText}>Till Lisa</Text>
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Behandling hemma hos dig</Text>
